@@ -1,49 +1,40 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
+	"flag"
+	"io/ioutil"
+	"log"
+
+	"github.com/deltaskelta/docker-alertd/monitor"
 )
 
 func main() {
-        for {
-		cli, err := client.NewEnvClient()
+	// Defining the nexessary file input flag, returns
+	fileArg := flag.String(
+		"f", "nil", "Usage: required configuration .yaml file")
+
+	flag.Parse()
+
+	switch {
+	case *fileArg != "nil":
+		// Parse the YAML file, and start monitor is there are no errors
+		fileData, err := ioutil.ReadFile(*fileArg)
 		if err != nil {
-			panic(err)
+			log.Println("There was a problem reading the configuration file")
+			log.Fatal(err)
 		}
 
-		containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{})
+		email := monitor.GetEmailConfJSON(&fileData)
+
+		conf, err := monitor.GetContainersJSON(&fileData)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 
-		for _, container := range containers {
-		        s, err := cli.ContainerStats(context.Background(), container.ID, false)
-			if err != nil { panic(err) }
-
-			var stats []byte
-			buf := make([]byte, 1024)
-			for {
-				n, err := s.Body.Read(buf)
-				stats = append(stats, buf[:n]...)
-				if err != nil {
-					if err != io.EOF {
-						fmt.Println("read error:", err)
-					}
-					break
-				}
-			}
-
-			var data interface{} 
-
-			e := json.Unmarshal(stats, &data)
-			if e != nil { fmt.Println(e) }
-
-//			fmt.Println(data)
-		}
+		monitor.Start(conf, email)
+	default:
+		fmt.Printf("  Define a yaml configuration\n\n")
+		flag.PrintDefaults()
 	}
 }

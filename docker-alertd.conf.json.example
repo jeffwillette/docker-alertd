@@ -1,0 +1,17 @@
+{
+	"containers": [
+		{
+			"name": "container-name",
+			"max-cpu": 0,
+			"max-mem": 20,
+			"min-procs": 3
+		}
+	],
+	"email": {
+		"from": "auto@freshpowpow.com",
+		"to": "jeff@gnarfresh.com",
+		"smtp": "smtp.coolserver.com",
+		"password": "gnarlesbarkely",
+		"port": 587
+	}
+}
