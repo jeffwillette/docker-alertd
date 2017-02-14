@@ -1,13 +1,19 @@
 {
 	"containers": [
 		{
-			"name": "container-name",
+			"name": "container1",
 			"max-cpu": 0,
 			"max-mem": 20,
 			"min-procs": 3
+		},
+		{
+			"name": "container2",
+			"max-cpu": 20,
+			"max-mem": 20,
+			"min-procs": 4
 		}
 	],
-	"email": {
+	"email_settings": {
 		"from": "auto@freshpowpow.com",
 		"to": "jeff@gnarfresh.com",
 		"smtp": "smtp.coolserver.com",

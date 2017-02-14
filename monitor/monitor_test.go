@@ -1,10 +1,9 @@
 package monitor
 
 import (
-	//"fmt"
+	"encoding/json"
+	"fmt"
 	"testing"
-
-	"github.com/antonholmquist/jason"
 )
 
 var test_json = `
@@ -190,50 +189,29 @@ var test_json = `
 }
 `
 
-func TestCheckCpuUsage(t *testing.T) {
-	a := []byte(test_json)
-	obj, _ := jason.NewObjectFromBytes(a)
-
-	// creating a container with 10% max cpu should pass the test
-	container := Container{"langalang", 10, 0, 0}
-	// If true is returns, that means an alert is raised (wrong)
-	if test := checkCpuUsage(obj, container); test {
-		t.Fail()
-	}
+// Unmarhsaling function that will be used in tests
+func UnmarshalTestJson(b *[]byte) (*AlertdStats, error) {
+	var alertdStats AlertdStats
+	j := []byte(test_json)
+	err := json.Unmarshal(j, &alertdStats)
+	return &alertdStats, err
 }
 
-func TestCheckCpuUsageFail(t *testing.T) {
-	a := []byte(test_json)
-	obj, _ := jason.NewObjectFromBytes(a)
-
-	// Creating a container with 0% max CPU usage should cause an alert (true)
-	container := Container{"langalang", 0, 0, 0}
-	// If false is returned that means alets was not raised (wrong)
-	if test := checkCpuUsage(obj, container); !test {
+// Testing that the unmarshaling of JSON from the docker API actually works
+func TestJsonUnmarshal(t *testing.T) {
+	j := []byte(test_json)
+	alertdStats, err := UnmarshalTestJson(&j)
+	if err != nil {
+		fmt.Printf("Error unmarshaling the JSON: %s", err)
 		t.Fail()
 	}
-}
 
-func TestCheckMinPids(t *testing.T) {
-	a := []byte(test_json)
-	obj, _ := jason.NewObjectFromBytes(a)
-
-	// Creating a container with 3 PIDS should match and
-	container := Container{"langalang", 0, 0, 3}
-	// If true is returned, that means an alert is raised (wrong)
-	if test := checkMinPids(obj, container); test {
-		t.Fail()
-	}
-}
-
-func TestCheckMinPidsFail(t *testing.T) {
-	a := []byte(test_json)
-	obj, _ := jason.NewObjectFromBytes(a)
-
-	// Creating a container with 0% max CPU usage should cause an alert (true)
-	container := Container{"langalang", 0, 0, 2}
-	// If false, that means an alert is raised which (wrong)
-	if test := checkMinPids(obj, container); !test {
+	if alertdStats.CPUStats.SystemUsage != float64(5.5157401e+14) ||
+		alertdStats.PreCPUStats.SystemUsage != float64(5.5157202e+14) ||
+		alertdStats.MemoryStats.Usage != float64(6.08256e+07) ||
+		alertdStats.PidsStats.Current != uint64(3) {
+		fmt.Println("Some of the unmarhsaled values do not match test" +
+			"JSON blob")
 		t.Fail()
 	}
 }

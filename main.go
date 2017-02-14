@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 
@@ -12,29 +12,27 @@ import (
 func main() {
 	// Defining the nexessary file input flag, returns
 	fileArg := flag.String(
-		"f", "nil", "Usage: required configuration .yaml file")
+		"f", "nil", "Usage: required configuration .json file")
 
 	flag.Parse()
 
 	switch {
-	case *fileArg != "nil":
-		// Parse the YAML file, and start monitor is there are no errors
+	case *fileArg == "nil":
+		fmt.Printf("  Define a JSON configuration file\n\n")
+		flag.PrintDefaults()
+	default:
+		// Read the JSON configuration file
 		fileData, err := ioutil.ReadFile(*fileArg)
 		if err != nil {
-			log.Println("There was a problem reading the configuration file")
-			log.Fatal(err)
+			log.Fatalf("Error opening the configuration file: %s", err)
 		}
 
-		email := monitor.GetEmailConfJSON(&fileData)
-
-		conf, err := monitor.GetContainersJSON(&fileData)
+		// Parse the configuration, returning a Conf object pointer
+		conf, err := monitor.GetConfJSON(&fileData)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		monitor.Start(conf, email)
-	default:
-		fmt.Printf("  Define a yaml configuration\n\n")
-		flag.PrintDefaults()
+		monitor.Start(conf)
 	}
 }
