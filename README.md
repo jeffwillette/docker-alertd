@@ -1,6 +1,12 @@
-### docker-alertd
+# docker-alertd
 
-#### Intro
+## Compiled Binaries
+
+####[linux](https://jrwillette.com/media/binaries/linux/docker-alertd)
+####[macOS](https://jrwillette.com/media/binaries/macOS/docker-alertd)
+####[windows](https://jrwillette.com/media/binaries/windows/docker-alertd.exe)
+
+## Intro
 
 docker-alertd monitors docker containers on a machine and sends alerts visa email when usage limits have been breached.
 
@@ -10,7 +16,7 @@ Current metrics that can be tested are:
 2. CPU Usage (as a percentage)
 3. Minimum Process running in container
 
-#### Config File
+## Config File
 
 The configuration file format is in JSON format, it need to include an array of at least one container, and email settings to login and send mail. 
 
@@ -40,7 +46,7 @@ The configuration file format is in JSON format, it need to include an array of 
 }
 ```
 
-#### Running the program
+## Running the program
 
 The program has one required option (config file) and needs to be started with the path to the configuration file
 
