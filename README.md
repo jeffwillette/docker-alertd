@@ -65,17 +65,17 @@ Docker-Alertd takes one argument which is the path to a configurations file. The
 ### Configuration Variables
 
 ##### Containers
-1. name: the container name or ID
-2. max-cpu: the maximum cpu usage threshold (as a percentage), if the container uses more CPU, an alert will be triggered.
-3. max-mem: the maximum memory usage threshold (in MB). If the container uses more system memory than this, an alert will be triggered.
-4. min-procs: the minimum number of running processes (PID's) in the container. If a the number of running processes dips below this level (when a process fails), an alert will be triggered.
+1. `name`: the container name or ID
+2. `max-cpu`: the maximum cpu usage threshold (as a percentage), if the container uses more CPU, an alert will be triggered.
+3. `max-mem`: the maximum memory usage threshold (in MB). If the container uses more system memory than this, an alert will be triggered.
+4. `min-procs`: the minimum number of running processes (PID's) in the container. If a the number of running processes dips below this level (when a process fails), an alert will be triggered.
 
 ##### Email Settings
-1. from: the email address to send alert emails from
-2. to: the email address to send alert emails to (can be the same as from)
-3. smtp: the smtp server to connect to
-4. password: the password to use for smtp authentication
-5. port: the port to connect to the smtp server
+1. `from`: the email address to send alert emails from
+2. `to`: the email address to send alert emails to (can be the same as from)
+3. `smtp`: the smtp server to connect to
+4. `password`: the password to use for smtp authentication
+5. `port`: the port to connect to the smtp server
 
 # Step 3: Run the program
 
@@ -96,19 +96,19 @@ This will start the program and log the output to stdout. It can be stopped with
 2017/02/17 11:46:47 alert email sent
 ```
 
-# 4 Set up as a background process (optional)
+# Step 4. Set up as a background process (optional)
 
 If you wish to have docker-alertd run as a background process, it needs to be setup as a background process as per your operating system.
 
-#### As A Systemd Service (for Linux systems with systemd)
+### As A Systemd Service (for Linux systems with systemd)
 
 If you have a systemd based system then you can refer to [docker-alertd.service.example](https://github.com/deltaskelta/docker-alertd/blob/master/docker-alertd.service.example) the example systemd service file and this [tutorial](https://www.digitalocean.com/community/tutorials/how-to-use-systemctl-to-manage-systemd-services-and-units)
 
-#### With Launchd (MacOS)
+### With Launchd (MacOS)
 
 Refer to the [launchd plist example file](https://github.com/deltaskelta/docker-alertd/blob/master/com.github.docker-alertd.plist.example) file and the [launchd reference](http://www.launchd.info/)
 
-#### With Sys V Init (various Linux systems without systemd)
+### With Sys V Init (various Linux systems without systemd)
 
 Refer to this [Sys V Init tutorial](https://www.cyberciti.biz/tips/linux-write-sys-v-init-script-to-start-stop-service.html)
 
