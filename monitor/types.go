@@ -10,6 +10,7 @@ type Container struct {
 	MaxCpu   int64  `json:"max-cpu"`
 	MaxMem   int64  `json:"max-mem"`
 	MinProcs int64  `json:"min-procs"`
+	//AlertActive bool
 }
 
 // EMail settings that are retrieed from the conf.json file

@@ -1,0 +1,10 @@
+language: go
+
+before_script:
+  - go test ./monitor/
+
+script:
+  - go install
+
+#after_success:
+#  - coveralls

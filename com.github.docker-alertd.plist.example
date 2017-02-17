@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>StandardErrorPath</key>
+    <string>/path/to/stderr/file.err</string>
+  <key>StandardOutPath</key>
+    <string>/path/to/stdout/file.out</string>
+  <key>KeepAlive</key>
+    <false/>
+  <key>Label</key>
+    <string>com.github.docker-alertd</string>
+  <key>ProgramArguments</key>
+    <array>
+      <string>/full/path/to/binary/docker-alertd</string>
+      <string>-f</string>
+      <string>/full/path/to/config/file</string>
+    </array>
+  <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>
