@@ -4,7 +4,7 @@
 
 ## What Does It Do?
 
-docker-alertd monitors docker containers on a host machine and sends alerts via email when usage limits (as defined in a conf file) have been breached. It is meant to be started as a background process on the host machine
+docker-alertd monitors docker containers on a host machine and sends alerts via email when usage limits (as defined in a conf file) have been breached. It can be run in the foreground or background
 
 Current metrics that can be tested are:
 
@@ -14,11 +14,9 @@ Current metrics that can be tested are:
 
 # Step 1: Install
 
-### Method 1: Download a compiled binary
+### Method 1: Download a pre-compiled binary
 
-####[linux](https://jrwillette.com/media/binaries/linux/docker-alertd)
-####[macOS](https://jrwillette.com/media/binaries/macOS/docker-alertd)
-####[windows](https://jrwillette.com/media/binaries/windows/docker-alertd.exe)
+####[linux](https://jrwillette.com/media/binaries/linux/docker-alertd), [macOS](https://jrwillette.com/media/binaries/macOS/docker-alertd), [windows](https://jrwillette.com/media/binaries/windows/docker-alertd.exe)
 
 ### Method 2: Build from source
 
@@ -37,7 +35,7 @@ go install
 
 Docker-Alertd takes one argument which is the path to a configurations file. The configuration file format is in JSON format, it consists of one object, which should include an array of at least one container, and valid email credentials to login and send mail.
 
-Example conf.json file
+#####Example `conf.json` file
 ```json
 {
 	"containers": [
@@ -64,9 +62,24 @@ Example conf.json file
 }
 ```
 
+### Configuration Variables
+
+##### Containers
+1. name: the container name or ID
+2. max-cpu: the maximum cpu usage threshold (as a percentage), if the container uses more CPU, an alert will be triggered.
+3. max-mem: the maximum memory usage threshold (in MB). If the container uses more system memory than this, an alert will be triggered.
+4. min-procs: the minimum number of running processes (PID's) in the container. If a the number of running processes dips below this level (when a process fails), an alert will be triggered.
+
+##### Email Settings
+1. from: the email address to send alert emails from
+2. to: the email address to send alert emails to (can be the same as from)
+3. smtp: the smtp server to connect to
+4. password: the password to use for smtp authentication
+5. port: the port to connect to the smtp server
+
 # Step 3: Run the program
 
-The program has one required option ( -f [config file]) and needs to be started with the path to the configuration file
+The program has one required option ( -f [config-file]) and needs to be started with the path to the configuration file
 
 ```
 /path/to/binary/docker-alertd -f ~/path/to/configuration/file/config.json
