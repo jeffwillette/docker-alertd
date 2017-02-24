@@ -1,33 +1,5 @@
 package monitor
 
-import (
-	"github.com/docker/docker/api/types"
-)
-
-// Container type that is unmarshaled from the conf.json file
-type Container struct {
-	Name     string `json:"name"`
-	MaxCpu   int64  `json:"max-cpu"`
-	MaxMem   int64  `json:"max-mem"`
-	MinProcs int64  `json:"min-procs"`
-	//AlertActive bool
-}
-
-// EMail settings that are retrieed from the conf.json file
-type EmailSettings struct {
-	From     string `json:"from"`
-	To       string `json:"to"`
-	SMTP     string `json:"smtp"`
-	Password string `json:"password"`
-	Port     int    `json:"port"`
-}
-
-// Conf struct that combines containers and email settings structs
-type Conf struct {
-	Containers    []Container   `json:"containers"`
-	EmailSettings EmailSettings `json:"email_settings"`
-}
-
 // These are taken from the docker API, and uint64's are redefined into
 //float64 because they get converted to scientific notation during the
 // marshaling process.
@@ -104,15 +76,4 @@ type MemoryStats struct {
 	CommitPeak float64 `json:"commitpeakbytes,omitempty"`
 	// private working set
 	PrivateWorkingSet float64 `json:"privateworkingset,omitempty"`
-}
-
-// from the types imported from docker. These include the data that needs to be
-// extracted from the docker API
-type AlertdStats struct {
-	CPUStats    CPUStats    `json:"cpu_stats"`
-	PreCPUStats CPUStats    `json:"precpu_stats"`
-	MemoryStats MemoryStats `json:"memory_stats"`
-	// this one is not redefined because JSON marshal does not convert them
-	// into float64's
-	PidsStats types.PidsStats `json:"pids_stats"`
 }

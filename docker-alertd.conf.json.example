@@ -13,9 +13,14 @@
 			"min-procs": 4
 		}
 	],
-	"email_settings": {
+	"email_addresses": {
 		"from": "auto@freshpowpow.com",
-		"to": "jeff@gnarfresh.com",
+		"to": [
+			"jeff@gnarfresh.com"
+		],
+		"subject": "DOCKER ALERT"
+	},
+	"email_settings": {
 		"smtp": "smtp.coolserver.com",
 		"password": "gnarlesbarkely",
 		"port": 587

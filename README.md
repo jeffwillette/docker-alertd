@@ -52,12 +52,17 @@ Docker-Alertd takes one argument which is the path to a configurations file. The
 			"min-procs": 4
 		}
 	],
-	"email_settings": {
+	"email_addresses": {
 		"from": "auto@freshpowpow.com",
-		"to": "jeff@gnarfresh.com",
+		"to": [
+			"jeff@gnarfresh.com"
+		],
+		"subject": "DOCKER ALERT",
+	},
+	"email_settings": {
 		"smtp": "smtp.coolserver.com",
 		"password": "gnarlesbarkely",
-		"port": 587
+		"port": "587"
 	}
 }
 ```
@@ -70,12 +75,15 @@ Docker-Alertd takes one argument which is the path to a configurations file. The
 3. `max-mem`: the maximum memory usage threshold (in MB). If the container uses more system memory than this, an alert will be triggered.
 4. `min-procs`: the minimum number of running processes (PID's) in the container. If a the number of running processes dips below this level (when a process fails), an alert will be triggered.
 
-##### Email Settings
+##### Email Addresses
 1. `from`: the email address to send alert emails from
 2. `to`: the email address to send alert emails to (can be the same as from)
-3. `smtp`: the smtp server to connect to
-4. `password`: the password to use for smtp authentication
-5. `port`: the port to connect to the smtp server
+3. `subject`: The subject line of the alert emails
+
+#### Email Settings
+1. `smtp`: the smtp server to connect to
+2. `password`: the password to use for smtp authentication
+3. `port`: the port to connect to the smtp server
 
 # Step 3: Run the program
 
@@ -94,7 +102,10 @@ This will start the program and log the output to stdout. It can be stopped with
 ------------------------------
 2017/02/17 11:46:42 CPU ALERT: container1's CPU usage exceeded 0, it is currently using 0.101465
 2017/02/17 11:46:47 alert email sent
+...
 ```
+
+Docker Alertd will continue to run forever, it is meant to be run in perpetuity.
 
 # Step 4. Set up as a background process (optional)
 

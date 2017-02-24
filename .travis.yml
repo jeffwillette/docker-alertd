@@ -5,6 +5,3 @@ before_script:
 
 script:
   - go install
-
-#after_success:
-#  - coveralls
