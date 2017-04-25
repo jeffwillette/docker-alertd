@@ -14,11 +14,7 @@ Current metrics that can be tested are:
 
 # Step 1: Install
 
-### Method 1: Download a pre-compiled binary
-
-####[linux](https://jrwillette.com/media/binaries/linux/docker-alertd), [macOS](https://jrwillette.com/media/binaries/macOS/docker-alertd), [windows](https://jrwillette.com/media/binaries/windows/docker-alertd.exe)
-
-### Method 2: Build from source
+### Method: Build from source
 
 Assuming that you already have `go` installed on your machine, you can build from
 source...
