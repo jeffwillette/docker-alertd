@@ -1,16 +1,15 @@
 package monitor
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 
-	"io/ioutil"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 
-	"golang.org/x/net/context"
+	"io/ioutil"
 )
 
 /*
