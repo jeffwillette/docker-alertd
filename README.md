@@ -22,18 +22,18 @@ Assuming that you already have `go` installed on your machine, you can just `go 
 go get github.com/deltaskelta/docker-alertd
 ```
 
-If you would like to download a pre-compiled binary then you can choose from one of the
+##### If you would like to download a pre-compiled binary then you can choose from one of the
 releases below...
 
-[MacOS](https://github.com/deltaskelta/docker-alertd/raw/release/dist/mac/docker-alertd)
-[Linux](https://github.com/deltaskelta/docker-alertd/raw/release/dist/linux/docker-alertd)
-[Windows](https://github.com/deltaskelta/docker-alertd/raw/release/dist/windows/docker-alertd.exe)
+### [MacOS](https://github.com/deltaskelta/docker-alertd/raw/release/dist/mac/docker-alertd)
+### [Linux](https://github.com/deltaskelta/docker-alertd/raw/release/dist/linux/docker-alertd)
+### [Windows](https://github.com/deltaskelta/docker-alertd/raw/release/dist/windows/docker-alertd.exe)
 
 # Step 2: Make a Configuration File
 
 Docker-Alertd takes one argument which is the path to a configurations file. The configuration file format is in JSON format, it consists of one object, which should include an array of at least one container, and valid email credentials to login and send mail.
 
-#####Example `conf.json` file
+##### Example `conf.json` file
 ```json
 {
 	"containers": [
