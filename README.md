@@ -16,16 +16,18 @@ Current metrics that can be tested are:
 
 ### Method: Build from source
 
-Assuming that you already have `go` installed on your machine, you can build from
-source...
+Assuming that you already have `go` installed on your machine, you can just `go get` it.
 
 ```
 go get github.com/deltaskelta/docker-alertd
-cd $GOPATH/src/github.com/deltaskelta/docker-alertd
-go install
 ```
 
-`go install` will compile and install the binary to you users `$GOPATH`. More information about how to properly setup a go environment can be found [at the go website](https://golang.org/doc/install)
+If you would like to download a pre-compiled binary then you can choose from one of the
+releases below...
+
+[MacOS](https://github.com/deltaskelta/docker-alertd/raw/release/dist/mac/docker-alertd)
+[Linux](https://github.com/deltaskelta/docker-alertd/raw/release/dist/linux/docker-alertd)
+[Windows](https://github.com/deltaskelta/docker-alertd/raw/release/dist/windows/docker-alertd.exe)
 
 # Step 2: Make a Configuration File
 
