@@ -1,4 +1,4 @@
-package monitor
+package cmd
 
 // These are taken from the docker API, and uint64's are redefined into
 //float64 because they get converted to scientific notation during the
