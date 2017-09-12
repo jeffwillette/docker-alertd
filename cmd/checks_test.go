@@ -1,4 +1,4 @@
-package monitor
+package cmd
 
 import (
 	"encoding/json"

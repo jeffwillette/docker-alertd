@@ -1,0 +1,90 @@
+// Copyright © 2017 NAME HERE <EMAIL ADDRESS>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package cmd
+
+import (
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+
+	"github.com/spf13/cobra"
+)
+
+var dir string
+
+// initconfigCmd represents the initconfig command
+var initconfigCmd = &cobra.Command{
+	Use:   "initconfig",
+	Short: "generate a configuration file in the current directory",
+	Long:  `generates a blank configuration file in the current directory`,
+	Run: func(cmd *cobra.Command, args []string) {
+		filename := fmt.Sprintf("%s/%s.yaml", dir, confName)
+
+		// check to see if the file exists before writing the config file
+		file, _ := os.Stat(filename)
+		switch {
+		case file != nil:
+			log.Println("There is already a config file present, please move or delete" +
+				" it before regenerating")
+		default:
+			ioutil.WriteFile(filename, config, 0644)
+			log.Println("config successfully created, it has been filled with an example" +
+				", which needs to be changed in order for docker-alertd to function.")
+		}
+	},
+}
+
+func init() {
+	RootCmd.AddCommand(initconfigCmd)
+
+	// gettng the current dir as the default directory value
+	d, err := os.Getwd()
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Cobra supports local flags which will only run when this command
+	initconfigCmd.Flags().StringVarP(&dir, "directory", "d", d, "directory to place config file in")
+
+}
+
+var config = []byte(`---
+# In yaml, 'containers' is an array of dictionaries that each contain the name of the
+# container to monitor, and the metrics which it should be monitored by. If there are no 
+# metrics present, then it will just be monitored to make sure that is is currently up.
+containers:
+  - name: container1
+    maxCpu: 0
+    maxMem: 20
+    minProcs: 3
+
+  - name: container2
+    maxCpu: 20
+    maxMem: 20
+    minProcs: 4
+
+# If email settings are present and active, then email alerts will be sent when an alert
+# is triggered.
+emailSettings:
+  active: true
+  smtp: smtp.someserver.com
+  password: s00p3rS33cret
+  port: 587
+  from: auto@freshpowpow.com
+  subject: "DOCKER_ALERTD"
+  to:
+    - jeff@gnarfresh.com
+`)
