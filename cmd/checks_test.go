@@ -189,26 +189,26 @@ var testStatsJSON = []byte(`
 }
 `)
 
-var cont1 = MondContainer{
+var cont1 = AlertdContainer{
 	Name: "test_container",
-	Alerts: []ContainerAlert{
-		ContainerAlert{
-			Name:     "CPU Usage Alert",
-			Function: CheckCPUUsage,
-			Limit:    20,
-			Active:   false,
+	Checks: []ContainerCheck{
+		ContainerCheck{
+			Name:        "CPU Usage Alert",
+			Function:    CheckCPUUsage,
+			Limit:       20,
+			AlertActive: false,
 		},
 	},
 }
 
-var cont2 = MondContainer{
+var cont2 = AlertdContainer{
 	Name: "test_container",
-	Alerts: []ContainerAlert{
-		ContainerAlert{
-			Name:     "CPU Usage Alert",
-			Function: CheckCPUUsage,
-			Limit:    0,
-			Active:   false,
+	Checks: []ContainerCheck{
+		ContainerCheck{
+			Name:        "CPU Usage Alert",
+			Function:    CheckCPUUsage,
+			Limit:       0,
+			AlertActive: false,
 		},
 	},
 }
@@ -224,7 +224,7 @@ func TestCheckCPUUsage(t *testing.T) {
 	}
 
 	type args struct {
-		ca          *ContainerAlert
+		ca          *ContainerCheck
 		alertdStats *AlertdStats
 	}
 	tests := []struct {
@@ -236,7 +236,7 @@ func TestCheckCPUUsage(t *testing.T) {
 		{
 			name: "1: Testing a container that passes the check",
 			args: args{
-				ca:          &cont1.Alerts[0],
+				ca:          &cont1.Checks[0],
 				alertdStats: &alertdStats,
 			},
 			want:  false,
@@ -256,14 +256,14 @@ func TestCheckCPUUsage(t *testing.T) {
 	}
 }
 
-var cMinPidPass = &ContainerAlert{
+var cMinPidPass = &ContainerCheck{
 	"Check Minimum Processes pass",
 	CheckMinPids,
 	3,
 	false,
 }
 
-var cMinPidFail = &ContainerAlert{
+var cMinPidFail = &ContainerCheck{
 	"Check Minimum Processes fail",
 	CheckMinPids,
 	4,
@@ -274,7 +274,7 @@ func TestCheckMinPids(t *testing.T) {
 	json.Unmarshal(testStatsJSON, &alertdStats)
 
 	type args struct {
-		ca          *ContainerAlert
+		ca          *ContainerCheck
 		alertdStats *AlertdStats
 	}
 	tests := []struct {
@@ -315,14 +315,14 @@ func TestCheckMinPids(t *testing.T) {
 	}
 }
 
-var cMaxMemPass = &ContainerAlert{
+var cMaxMemPass = &ContainerCheck{
 	"Check Maximum Memory Pass",
 	CheckMemory,
 	100,
 	false,
 }
 
-var cMaxMemFail = &ContainerAlert{
+var cMaxMemFail = &ContainerCheck{
 	"Check Maximum Memory Fail",
 	CheckMemory,
 	50,
@@ -333,7 +333,7 @@ func TestCheckMemory(t *testing.T) {
 	json.Unmarshal(testStatsJSON, &alertdStats)
 
 	type args struct {
-		ca          *ContainerAlert
+		ca          *ContainerCheck
 		alertdStats *AlertdStats
 	}
 	tests := []struct {
@@ -379,7 +379,7 @@ func TestMondContainer_CheckContainer(t *testing.T) {
 
 	type fields struct {
 		Name   string
-		Alerts []ContainerAlert
+		Checks []ContainerCheck
 	}
 	type args struct {
 		a *AlertdStats
@@ -388,148 +388,141 @@ func TestMondContainer_CheckContainer(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   []string
+		want   string
 	}{
 		{
 			name: "1: testing containers that generate no alerts",
 			fields: fields{
 				Name: "test_container",
-				Alerts: []ContainerAlert{
-					ContainerAlert{
-						Name:     "Check CPU",
-						Function: CheckCPUUsage,
-						Limit:    20,
-						Active:   false,
+				Checks: []ContainerCheck{
+					ContainerCheck{
+						Name:        "Check CPU",
+						Function:    CheckCPUUsage,
+						Limit:       20,
+						AlertActive: false,
 					},
-					ContainerAlert{
-						Name:     "Check Mem",
-						Function: CheckMemory,
-						Limit:    90,
-						Active:   false,
+					ContainerCheck{
+						Name:        "Check Mem",
+						Function:    CheckMemory,
+						Limit:       90,
+						AlertActive: false,
 					},
-					ContainerAlert{
-						Name:     "check min PIDS",
-						Function: CheckMinPids,
-						Limit:    3,
-						Active:   false,
+					ContainerCheck{
+						Name:        "check min PIDS",
+						Function:    CheckMinPids,
+						Limit:       3,
+						AlertActive: false,
 					},
 				},
 			},
 			args: args{
 				&alertdStats,
 			},
-			want: []string{},
+			want: "",
 		},
 		{
-			name: "1: testing containers that generate 3 alerts",
+			name: "1: testing containers that generate 2 alerts",
 			fields: fields{
 				Name: "test_container",
-				Alerts: []ContainerAlert{
-					ContainerAlert{
-						Name:     "Check CPU",
-						Function: CheckCPUUsage,
-						Limit:    0,
-						Active:   false,
+				Checks: []ContainerCheck{
+					ContainerCheck{
+						Name:        "Check CPU",
+						Function:    CheckCPUUsage,
+						Limit:       0,
+						AlertActive: false,
 					},
-					ContainerAlert{
-						Name:     "Check Mem",
-						Function: CheckMemory,
-						Limit:    50,
-						Active:   false,
+					ContainerCheck{
+						Name:        "Check Mem",
+						Function:    CheckMemory,
+						Limit:       50,
+						AlertActive: false,
 					},
-					ContainerAlert{
-						Name:     "check min PIDS",
-						Function: CheckMinPids,
-						Limit:    4,
-						Active:   false,
+					ContainerCheck{
+						Name:        "check min PIDS",
+						Function:    CheckMinPids,
+						Limit:       4,
+						AlertActive: false,
 					},
 				},
 			},
 			args: args{
 				&alertdStats,
 			},
-			want: []string{
-				"Check CPU: test_container exceeded alert threshold of 0, it is " +
-					"currently using 0.026646.\n",
-				"Check Mem: test_container exceeded alert threshold of 50, it is " +
-					"currently using 60.825600.\n",
-				"check min PIDS: test_container exceeded alert threshold of 4, it " +
-					"is currently using 3.000000.\n",
-			},
+			want: "Check Mem: test_container exceeded alert threshold of 50, it is " +
+				"currently using 60.825600.\ncheck min PIDS: test_container exceeded alert threshold of 4, it " +
+				"is currently using 3.000000.\n",
 		},
 		{
 			name: "3: containers with active alerts (would make alerts, but don't)",
 			fields: fields{
 				Name: "test_container",
-				Alerts: []ContainerAlert{
-					ContainerAlert{
-						Name:     "Check CPU",
-						Function: CheckCPUUsage,
-						Limit:    0,
-						Active:   true,
+				Checks: []ContainerCheck{
+					ContainerCheck{
+						Name:        "Check CPU",
+						Function:    CheckCPUUsage,
+						Limit:       0,
+						AlertActive: true,
 					},
-					ContainerAlert{
-						Name:     "Check Mem",
-						Function: CheckMemory,
-						Limit:    50,
-						Active:   true,
+					ContainerCheck{
+						Name:        "Check Mem",
+						Function:    CheckMemory,
+						Limit:       50,
+						AlertActive: true,
 					},
-					ContainerAlert{
-						Name:     "check min PIDS",
-						Function: CheckMinPids,
-						Limit:    4,
-						Active:   true,
+					ContainerCheck{
+						Name:        "check min PIDS",
+						Function:    CheckMinPids,
+						Limit:       4,
+						AlertActive: true,
 					},
 				},
 			},
 			args: args{
 				&alertdStats,
 			},
-			want: []string{},
+			want: "",
 		},
 		{
 			name: "4: containers below threshold, with active alerts " +
 				"(generates recovery alert)",
 			fields: fields{
 				Name: "t",
-				Alerts: []ContainerAlert{
-					ContainerAlert{
-						Name:     "Check CPU",
-						Function: CheckCPUUsage,
-						Limit:    20,
-						Active:   true,
+				Checks: []ContainerCheck{
+					ContainerCheck{
+						Name:        "Check CPU",
+						Function:    CheckCPUUsage,
+						Limit:       20,
+						AlertActive: true,
 					},
-					ContainerAlert{
-						Name:     "Check Mem",
-						Function: CheckMemory,
-						Limit:    80,
-						Active:   true,
+					ContainerCheck{
+						Name:        "Check Mem",
+						Function:    CheckMemory,
+						Limit:       80,
+						AlertActive: true,
 					},
-					ContainerAlert{
-						Name:     "check min PIDS",
-						Function: CheckMinPids,
-						Limit:    3,
-						Active:   true,
+					ContainerCheck{
+						Name:        "check min PIDS",
+						Function:    CheckMinPids,
+						Limit:       3,
+						AlertActive: true,
 					},
 				},
 			},
 			args: args{
 				&alertdStats,
 			},
-			want: []string{
-				"Check CPU: t recovered. threshold: 20, current: 0.026646.\n",
-				"Check Mem: t recovered. threshold: 80, current: 60.825600.\n",
+			want: "Check CPU: t recovered. threshold: 20, current: 0.026646.\n" +
+				"Check Mem: t recovered. threshold: 80, current: 60.825600.\n" +
 				"check min PIDS: t recovered. threshold: 3, current: 3.000000.\n",
-			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			md := &MondContainer{
+			md := &AlertdContainer{
 				Name:   tt.fields.Name,
-				Alerts: tt.fields.Alerts,
+				Checks: tt.fields.Checks,
 			}
-			got := md.CheckContainer(tt.args.a)
+			got := md.CheckContainer(tt.args.a).Message
 			if !(len(got) == 0 && len(tt.want) == 0) && !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("MondContainer.CheckContainer() = %v, want %v", got, tt.want)
 			}
