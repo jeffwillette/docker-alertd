@@ -7,87 +7,73 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-
-	"io/ioutil"
 )
 
-// AlertdStats from the types imported from docker. These include the data that needs to be
-// extracted from the docker API
-type AlertdStats struct {
-	CPUStats    CPUStats    `json:"cpu_stats"`
-	PreCPUStats CPUStats    `json:"precpu_stats"`
-	MemoryStats MemoryStats `json:"memory_stats"`
-	// this one is not redefined because JSON marshal does not convert them
-	// into float64's
-	PidsStats types.PidsStats `json:"pids_stats"`
-}
-
-// UnmarshalStats takes the ContainerStats returned from the docker API and parses the JSON into
-// a ContainerStats struct
-func UnmarshalStats(c types.ContainerStats) *AlertdStats {
-	b, err := ioutil.ReadAll(c.Body)
-	if err != nil {
-		log.Fatal("Error reading the stats: ", err)
-	}
-
-	var alertdStats AlertdStats
-	err = json.Unmarshal(b, &alertdStats)
-	if err != nil {
-		log.Fatalf("Error unmarshaling JSON: %s", err)
-	}
-
-	return &alertdStats
-}
-
-// getStats just uses the docker API and an already tested Unmarshal function, no
+// GetStats just uses the docker API and an already tested Unmarshal function, no
 // testing needed.
-func getStats(a *AlertdContainer, c *client.Client) (*AlertdStats, error) {
-	rawStats, err := c.ContainerStats(context.Background(), a.Name, false)
+func GetStats(a *AlertdContainer, c *client.Client) (*types.Stats, error) {
+	cs, err := c.ContainerStats(context.Background(), a.Name, false)
+	if err != nil {
+		return nil, err
+	}
+	defer cs.Body.Close()
+
+	d := json.NewDecoder(cs.Body)
+	d.UseNumber()
+
+	var stats types.Stats
+	if err := d.Decode(&stats); err != nil {
+		return nil, err
+	}
+
+	return &stats, nil
+}
+
+// ContainerInspect returns the information which can decide if the container is current;y running
+// or not.
+func ContainerInspect(a *AlertdContainer, c *client.Client) (*types.ContainerJSON, error) {
+	containerJSON, err := c.ContainerInspect(context.Background(), a.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	defer rawStats.Body.Close()
-	return UnmarshalStats(rawStats), nil
+	return &containerJSON, nil
 }
 
-// NewAlertdContainer returns a slice of containers with all the info needed to run a
+// InitCheckers returns a slice of containers with all the info needed to run a
 // check on the container. Active is for whether or not the alert is active, not the check
-func NewAlertdContainer(c *Conf) *[]AlertdContainer {
+func InitCheckers(c *Conf) []AlertdContainer {
 	// Taking the Conf and changing it into a more appropriate format for the monitor
-	var alertdCont []AlertdContainer
+	var containers []AlertdContainer
 	for _, v := range c.Containers {
-		alertdCont = append(alertdCont, AlertdContainer{
+		containers = append(containers, AlertdContainer{
 			Name: v.Name,
-			Checks: []ContainerCheck{
-				ContainerCheck{
-					Name:        "Container Existence Alert",
-					Function:    NullCheck,
-					Limit:       0,
-					AlertActive: false,
-				},
-				ContainerCheck{
-					Name:        "CPU Usage Alert",
-					Function:    CheckCPUUsage,
-					Limit:       v.MaxCPU,
-					AlertActive: false,
-				},
-				ContainerCheck{
-					Name:        "Memory Usage Alert",
-					Function:    CheckMemory,
-					Limit:       v.MaxMem,
-					AlertActive: false,
-				},
-				ContainerCheck{
-					Name:        "Minimum Processes Alert",
-					Function:    CheckMinPids,
-					Limit:       v.MinProcs,
-					AlertActive: false,
-				},
+			Alert: &Alert{
+				Message: "",
+			},
+			CPUCheck: &MetricCheck{
+				Limit:       v.MaxCPU,
+				AlertActive: false,
+			},
+			MemCheck: &MetricCheck{
+				Limit:       v.MaxMem,
+				AlertActive: false,
+			},
+			PIDCheck: &MetricCheck{
+				Limit:       v.MinProcs,
+				AlertActive: false,
+			},
+			ExistenceCheck: &StaticCheck{
+				Expected:    true,
+				AlertActive: false,
+			},
+			RunningCheck: &StaticCheck{
+				Expected:    v.ExpectedRunning,
+				AlertActive: false,
 			},
 		})
 	}
-	return &alertdCont
+	return containers
 }
 
 // Start the main loop should continously run forever
@@ -99,33 +85,32 @@ func Start(c *Conf) {
 		log.Fatal(err)
 	}
 
-	alertdConts := NewAlertdContainer(c)
+	containers := InitCheckers(c)
 
 	for {
 		alert := &Alert{Message: ""}
-		for i, container := range *alertdConts {
-			alertdStats, err := getStats(&container, cli)
-			switch {
-			case container.IsUnknown(err):
-				// if the alert is not active I need to alert and make it active
-				if !container.Checks[0].AlertActive {
-					alert.Add("%s: checking '%s' gave the error: %s\n",
-						container.Checks[0].Name, container.Name, err.Error())
+		for _, c := range containers {
+			// make sure to reset the alert message on every loop
+			c.Alert.Message = ""
 
-					container.Checks[0].AlertActive = true
-				}
-				continue // If it is unknown and alert is active, nothing left to do
-			case container.HasErrored(err):
-				alert.Add("%s: Error getting stats for '%s': %s\n", container.Checks[i].Name,
-					container.Name, err.Error())
+			// this check should take care of checking whether or not the conainer exists,
+			// so the error handling in the next one should be just to default to sending
+			// an alert.
+			j, err := ContainerInspect(&c, cli)
+			c.CheckStatics(j, err)
 
-			case container.HasBecomeKnown(err):
-				alert.Add("%s: '%s' has recovered", container.Checks[0].Name, container.Name)
-				container.Checks[0].AlertActive = false
+			// if an alert should be sent that means it either failed existence or running
+			// checks which means that nothing more can be checked
+			if c.Alert.ShouldSend() || !c.RunningCheck.Expected || c.RunningCheck.AlertActive || c.ExistenceCheck.AlertActive {
+				alert.Concat(c.Alert) // add the alert in the container to the main alert
+				continue
+			}
 
-			default:
-				a := container.CheckContainer(alertdStats)
-				alert.Add("%s", a.Message)
+			s, err := GetStats(&c, cli)
+			c.CheckMetrics(s, err)
+
+			if c.Alert.ShouldSend() {
+				alert.Concat(c.Alert)
 			}
 		}
 		alert.Evaluate()

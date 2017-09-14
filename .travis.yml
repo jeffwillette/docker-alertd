@@ -1,7 +1,7 @@
 language: go
 
 before_script:
-  - go test ./monitor/
+  - make test
 
 script:
   - go install
