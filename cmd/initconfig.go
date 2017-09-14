@@ -67,11 +67,13 @@ var config = []byte(`---
 # metrics present, then it will just be monitored to make sure that is is currently up.
 containers:
   - name: container1
+  	expectedRunning: true
     maxCpu: 0
     maxMem: 20
     minProcs: 3
 
   - name: container2
+  	expectedRunning: true
     maxCpu: 20
     maxMem: 20
     minProcs: 4

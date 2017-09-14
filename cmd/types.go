@@ -11,10 +11,11 @@ import (
 // Container gets data from the Unmarshaling of the configuration file JSON and stores
 // the data throughout the course of the monitor.
 type Container struct {
-	Name     string
-	MaxCPU   int64
-	MaxMem   int64
-	MinProcs int64
+	Name            string
+	MaxCPU          uint64
+	MaxMem          uint64
+	MinProcs        uint64
+	ExpectedRunning bool
 }
 
 // EmailSettings implements the Alerter interface and sends emails
@@ -94,12 +95,24 @@ func (a *Alert) Evaluate() {
 
 // Add is for adding a call to Sprintf without making the actualt Sprintf call
 func (a *Alert) Add(fmtString string, args ...interface{}) {
-	a.Message += fmt.Sprintf(fmtString, args...)
+	a.Message += fmt.Sprintf(fmtString+"\n", args...)
+}
+
+// Concat will concat different alerts from containers together into one
+func (a *Alert) Concat(b ...*Alert) {
+	for _, v := range b {
+		a.Message += v.Message
+	}
+}
+
+// Log prints the alert to the log
+func (a *Alert) Log() {
+	log.Println(a.Message)
 }
 
 // Trigger is for sending out alerts to syslog and to alerts that are active in conf
 func (a *Alert) Trigger() error {
-	log.Println(a.Message)
+	log.Printf("alert:\n%s\n", a.Message)
 	//go func() {
 	//	err := alert.Email(&c.EmailSettings)
 	//	if err != nil {
