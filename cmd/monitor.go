@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -49,7 +50,7 @@ func InitCheckers(c *Conf) []AlertdContainer {
 		containers = append(containers, AlertdContainer{
 			Name: v.Name,
 			Alert: &Alert{
-				Message: "",
+				Messages: []error{},
 			},
 			CPUCheck: &MetricCheck{
 				Limit:       v.MaxCPU,
@@ -76,43 +77,67 @@ func InitCheckers(c *Conf) []AlertdContainer {
 	return containers
 }
 
-// Start the main loop should continously run forever
-func Start(c *Conf) {
-	log.Printf("started docker-alertd process\n------------------------------")
+// CheckContainers goes through and checks all the containers in a loop
+func CheckContainers(cnt []AlertdContainer, cli *client.Client, a *Alert) {
+	for _, c := range cnt {
+		// make sure we have a clean alert for this loop
+		c.Alert.Clear()
 
+		// handling whether the container exists, if these checks fail, the checking
+		// process should stop
+		j, err := ContainerInspect(&c, cli)
+		c.CheckStatics(j, err)
+
+		// if an alert should be sent that means it either failed existence or running
+		// checks which means that nothing more can be checked
+		if c.ChecksShouldStop() {
+			a.Concat(c.Alert) // add the alert in the container to the main alert
+			continue
+		}
+
+		s, err := GetStats(&c, cli)
+		c.CheckMetrics(s, err)
+
+		if c.Alert.ShouldSend() {
+			a.Concat(c.Alert)
+		}
+	}
+}
+
+// Monitor contains all the calls for the main loop of the monitor
+func Monitor(c *Conf, a *Alert) {
 	cli, err := client.NewEnvClient()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	containers := InitCheckers(c)
+	cnt := InitCheckers(c)
 
-	for {
-		alert := &Alert{Message: ""}
-		for _, c := range containers {
-			// make sure to reset the alert message on every loop
-			c.Alert.Message = ""
-
-			// this check should take care of checking whether or not the conainer exists,
-			// so the error handling in the next one should be just to default to sending
-			// an alert.
-			j, err := ContainerInspect(&c, cli)
-			c.CheckStatics(j, err)
-
-			// if an alert should be sent that means it either failed existence or running
-			// checks which means that nothing more can be checked
-			if c.Alert.ShouldSend() || !c.RunningCheck.Expected || c.RunningCheck.AlertActive || c.ExistenceCheck.AlertActive {
-				alert.Concat(c.Alert) // add the alert in the container to the main alert
-				continue
+	switch c.Iterations {
+	case 0:
+		for {
+			a.Clear()
+			CheckContainers(cnt, cli, a)
+			if a.ShouldSend() {
+				a.Alert()
 			}
-
-			s, err := GetStats(&c, cli)
-			c.CheckMetrics(s, err)
-
-			if c.Alert.ShouldSend() {
-				alert.Concat(c.Alert)
-			}
+			time.Sleep(time.Duration(c.Duration) * time.Millisecond)
 		}
-		alert.Evaluate()
+	default:
+		for i := int64(0); i < c.Iterations; i++ {
+			a.Clear()
+			CheckContainers(cnt, cli, a)
+			if a.ShouldSend() {
+				a.Alert()
+			}
+			time.Sleep(time.Duration(c.Duration) * time.Millisecond)
+		}
 	}
+}
+
+// Start the main monitor loop for a set amount of iterations
+func Start(c *Conf) {
+	log.Printf("starting docker-alertd\n------------------------------")
+	a := &Alert{Messages: []error{}}
+	Monitor(c, a)
 }

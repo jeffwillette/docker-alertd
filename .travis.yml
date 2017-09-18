@@ -1,7 +1,9 @@
 language: go
+sudo: required
 
-before_script:
-  - make test
+services:
+  - docker
 
 script:
+  - go test
   - go install

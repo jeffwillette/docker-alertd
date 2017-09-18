@@ -27,7 +27,6 @@ import (
 
 var (
 	cfgFile string
-
 	// Config is the configuration object defined in conf-types file
 	Config   Conf
 	confName = ".docker-alertd"
@@ -70,10 +69,18 @@ func init() {
 	// Cobra supports Persistent Flags, which, if defined here,
 	// will be global for your application.
 
-	configUsage := fmt.Sprintf("config file (default is ./%[1]s.yaml or $HOME/%[1]s.yaml)", confName)
-	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", configUsage)
+	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "",
+		fmt.Sprintf("config file (default is ./%[1]s.yaml or $HOME/%[1]s.yaml)", confName))
+	RootCmd.PersistentFlags().Int64P("iterations", "i", 0,
+		"the number of iterations that the monitor will run. (default 0 is infinite)")
+	RootCmd.PersistentFlags().Int64P("duration", "t", 1000,
+		"the duration between monitor calls to the docker API in milliseconds (default 1000)")
 
 	// Cobra also supports local flags, which will only run
+	// Bind all the flags to viper for handling
+	viper.BindPFlag("iterations", RootCmd.PersistentFlags().Lookup("iterations"))
+	viper.BindPFlag("duration", RootCmd.PersistentFlags().Lookup("duration"))
+
 	// when this action is called directly.
 	//RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

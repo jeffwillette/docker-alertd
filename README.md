@@ -4,13 +4,16 @@
 
 ## What Does It Do?
 
-docker-alertd monitors docker containers on a host machine and sends alerts via email when usage limits (as defined in a conf file) have been breached. It can be run in the foreground or background
+docker-alertd monitors docker containers on a host machine and sends alerts via email when
+usage limits have been breached.
 
-Current metrics that can be tested are:
+Currently, alerts can be sent based on:
 
-1. Memory usage (in MB)
-2. CPU Usage (as a percentage)
-3. Minimum Process running in container
+1. Container existence (regardless of running state)
+2. Running state (running or existed)
+3. Memory usage (in MB)
+4. CPU Usage (as a percentage)
+5. Minimum Process running in container
 
 # Step 1: Install
 
@@ -31,64 +34,91 @@ releases below...
 
 # Step 2: Make a Configuration File
 
-Docker-Alertd takes one argument which is the path to a configurations file. The configuration file format is in JSON format, it consists of one object, which should include an array of at least one container, and valid email credentials to login and send mail.
+Docker-Alertd needs a configuration file in order to run, it will search the directory
+which contains the binary, and the home directory for a config file automatically. A
+special config file location can be specified with the `--config` flag.
 
-##### Example `conf.json` file
-```json
-{
-	"containers": [
-		{
-			"name": "container1",
-			"max-cpu": 0,
-			"max-mem": 20,
-			"min-procs": 3
-		},
-		{
-			"name": "container2",
-			"max-cpu": 20,
-			"max-mem": 20,
-			"min-procs": 4
-		}
-	],
-	"email_addresses": {
-		"from": "auto@freshpowpow.com",
-		"to": [
-			"jeff@gnarfresh.com"
-		],
-		"subject": "DOCKER ALERT",
-	},
-	"email_settings": {
-		"smtp": "smtp.coolserver.com",
-		"password": "gnarlesbarkely",
-		"port": "587"
-	}
-}
+A base config file can be generated with the command:
+
+```
+docker-alertd initconfig -d /path/to/config/location/
+```
+
+##### Example `.docker-alertd.yaml` file
+```yaml
+---
+duration: 100				# duration in ms between docker API calls
+iterations: 0				# number of iterations to run (0 = run forever)
+
+# 'containers' is an array of dictionaries that each contain the name of a container to
+# monitor, and the metrics which it should be monitored by. If there are no metrics
+# present, then it will just be monitored to make sure that is is currently up.
+
+# This will monitor only that the container exists, running or not...
+# containers:
+#   - name: mycontainer
+
+containers:
+  - name: container1
+    expectedRunning: true
+
+  - name: container2
+    expectedRunning: true
+    maxCpu: 20
+    maxMem: 20
+    minProcs: 4
+
+# If email settings are present and active, then email alerts will be sent when an alert
+# is triggered.
+emailSettings:
+  active: true
+  smtp: smtp.someserver.com
+  password: s00p3rS33cret
+  port: 587
+  from: auto@freshpowpow.com
+  subject: "DOCKER_ALERTD"
+  to:
+    - jeff@gnarfresh.com
 ```
 
 ### Configuration Variables
 
 ##### Containers
-1. `name`: the container name or ID
-2. `max-cpu`: the maximum cpu usage threshold (as a percentage), if the container uses more CPU, an alert will be triggered.
-3. `max-mem`: the maximum memory usage threshold (in MB). If the container uses more system memory than this, an alert will be triggered.
-4. `min-procs`: the minimum number of running processes (PID's) in the container. If a the number of running processes dips below this level (when a process fails), an alert will be triggered.
+`duration`: the duration to wait between docker engine API calls.
 
-##### Email Addresses
-1. `from`: the email address to send alert emails from
-2. `to`: the email address to send alert emails to (can be the same as from)
-3. `subject`: The subject line of the alert emails
+`iterations`:  the number of iterations that docker-alertd should run (0 = run forever)
+
+`name`: the container name or ID
+
+`maxCpu`: the maximum cpu usage threshold (as a percentage), if the container uses more
+CPU, an alert will be triggered.
+
+`maxMem`: the maximum memory usage threshold (in MB). If the container uses more system
+memory than this, an alert will be triggered.
+
+`minProcs`: the minimum number of running processes (PID's) in the container. If a the
+number of running processes dips below this level (when a process fails), an alert will
+be triggered.
 
 #### Email Settings
-1. `smtp`: the smtp server to connect to
-2. `password`: the password to use for smtp authentication
-3. `port`: the port to connect to the smtp server
+`active`: whether email settings are active or not
+
+`smtp`: the smtp server to connect to
+
+`password`: the password to use for smtp authentication
+
+`port`: the port to connect to the smtp server
+
+`from`: the email address to send from
+
+`subject`: the subject line of emails sent
+
+`to`: an array of email addresses to send the alerts to
 
 # Step 3: Run the program
 
-The program has one required option ( -f [config-file]) and needs to be started with the path to the configuration file
-
 ```
-/path/to/binary/docker-alertd -f ~/path/to/configuration/file/config.json
+/path/to/binary/docker-alertd --config ~/path/to/configuration/file/.docker-alertd.yaml
 ```
 
 This will start the program and log the output to stdout. It can be stopped with CTRL-C.
@@ -96,22 +126,23 @@ This will start the program and log the output to stdout. It can be stopped with
 #### Example Output:
 
 ```
-2017/02/17 11:46:40 started docker-alertd process
+2017/09/18 12:11:44 starting docker-alertd
 ------------------------------
-2017/02/17 11:46:42 CPU ALERT: container1's CPU usage exceeded 0, it is currently using 0.101465
-2017/02/17 11:46:47 alert email sent
+2017/09/18 12:11:44 ALERT:
+2017/09/18 12:11:44 container1: Existence check failure: Error: No such container: container1
+2017/09/18 12:11:44 container2: Existence check failure: Error: No such container: container2
 ...
 ```
 
-Docker Alertd will continue to run forever, it is meant to be run in perpetuity.
-
 # Step 4. Set up as a background process (optional)
 
-If you wish to have docker-alertd run as a background process, it needs to be setup as a background process as per your operating system.
+If you wish to have docker-alertd run as a background process, it needs to be setup as a
+background process as per your operating system.
 
 ### As A Systemd Service (for Linux systems with systemd)
 
-If you have a systemd based system then you can refer to [docker-alertd.service.example](https://github.com/deltaskelta/docker-alertd/blob/master/docker-alertd.service.example) the example systemd service file and this [tutorial](https://www.digitalocean.com/community/tutorials/how-to-use-systemctl-to-manage-systemd-services-and-units)
+If you have a systemd based system then you can refer to [docker-alertd.service.example](https://github.com/deltaskelta/docker-alertd/blob/master/docker-alertd.service.example) 
+the example systemd service file and this [tutorial](https://www.digitalocean.com/community/tutorials/how-to-use-systemctl-to-manage-systemd-services-and-units)
 
 ### With Launchd (MacOS)
 
