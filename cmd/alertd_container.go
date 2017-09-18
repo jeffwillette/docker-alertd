@@ -6,17 +6,29 @@ import (
 	"github.com/docker/docker/api/types"
 )
 
+// TODO: stopped here, write tests that start containers > release
+
 // MetricCheck stores the name of the alert, a function, and a active boolean
 type MetricCheck struct {
-	Limit       uint64
 	AlertActive bool
+	Limit       uint64
+}
+
+// ToggleAlertActive changes the state of the alert
+func (c *MetricCheck) ToggleAlertActive() {
+	c.AlertActive = !c.AlertActive
 }
 
 // StaticCheck checks the container for some static thing that is not based on usage
 // statistics, like its existence, whether it is running or not, etc.
 type StaticCheck struct {
-	Expected    bool
 	AlertActive bool
+	Expected    bool
+}
+
+// ToggleAlertActive changes the state of the alert
+func (c *StaticCheck) ToggleAlertActive() {
+	c.AlertActive = !c.AlertActive
 }
 
 // Checker interface has all of the methods necessary to check a container
@@ -47,7 +59,7 @@ type AlertdContainer struct {
 func (c *AlertdContainer) CheckMetrics(s *types.Stats, e error) {
 	switch {
 	case e != nil:
-		c.Alert.Add("Received an unknown error: %s", e.Error())
+		c.Alert.Add(e, nil, "Received an unknown error")
 	default:
 		c.CheckCPUUsage(s)
 		c.CheckMinPids(s)
@@ -57,11 +69,26 @@ func (c *AlertdContainer) CheckMetrics(s *types.Stats, e error) {
 
 // CheckStatics will run all of the static checks that are listed for a container.
 func (c *AlertdContainer) CheckStatics(j *types.ContainerJSON, e error) {
-	switch {
-	case e != nil:
-		c.CheckExists(e)
-	default:
+	c.CheckExists(e)
+	if j != nil {
 		c.CheckRunning(j)
+	}
+}
+
+// ChecksShouldStop returns whether the checks should stop after the static checks or
+// continue onto the metric checks.
+func (c *AlertdContainer) ChecksShouldStop() bool {
+	switch {
+	case c.RunningCheck.AlertActive:
+		return true
+	case c.ExistenceCheck.AlertActive:
+		return true
+	case !c.RunningCheck.Expected:
+		return true
+	case c.Alert.ShouldSend():
+		return true
+	default:
+		return false
 	}
 }
 
@@ -92,18 +119,18 @@ func (c *AlertdContainer) CheckExists(e error) {
 	switch {
 	case c.IsUnknown(e) && !c.ExistenceCheck.AlertActive:
 		// if the alert is not active I need to alert and make it active
-		c.Alert.Add("%s: failed existence check with error: %s", c.Name, e.Error())
-		c.ExistenceCheck.AlertActive = true
+		c.Alert.Add(e, ErrExistCheckFail, "%s", c.Name)
+		c.ExistenceCheck.ToggleAlertActive()
 
 	case c.IsUnknown(e) && c.ExistenceCheck.AlertActive:
 		// do nothing
 	case c.HasErrored(e):
 		// if there is some other error besides an existence check error
-		c.Alert.Add("%s: unknown error getting stats: %s", c.Name, e.Error())
+		c.Alert.Add(e, ErrUnknown, "%s", c.Name)
 
 	case c.HasBecomeKnown(e):
-		c.Alert.Add("%s: existence check: recovered (exists)", c.Name)
-		c.ExistenceCheck.AlertActive = false
+		c.Alert.Add(ErrExistCheckRecovered, nil, "%s", c.Name)
+		c.ExistenceCheck.ToggleAlertActive()
 	}
 }
 
@@ -117,27 +144,28 @@ func (c *AlertdContainer) ShouldAlertRunning(j *types.ContainerJSON) bool {
 func (c *AlertdContainer) CheckRunning(j *types.ContainerJSON) {
 	switch {
 	case c.ShouldAlertRunning(j) && !c.RunningCheck.AlertActive:
-		c.Alert.Add("%s: failed running state check (expected: %t): current running state: %t",
+		c.Alert.Add(ErrRunningCheckFail, nil, "%s: expected running state: %t, current running state: %t",
 			c.Name, c.RunningCheck.Expected, j.State.Running)
 
-		c.RunningCheck.AlertActive = true
+		c.RunningCheck.ToggleAlertActive()
 
 	case !c.ShouldAlertRunning(j) && c.RunningCheck.AlertActive:
-		c.Alert.Add("%s: running state check recovered (expected: %t): current running state: %t",
+		c.Alert.Add(ErrRunningCheckRecovered, nil, "%s: expected running state: %t, current running state: %t",
 			c.Name, c.RunningCheck.Expected, j.State.Running)
 
-		c.RunningCheck.AlertActive = false
+		c.RunningCheck.ToggleAlertActive()
 	}
 }
 
 // RealCPUUsage calculates the CPU usage based on the ContainerJSON info
 func (c *AlertdContainer) RealCPUUsage(s *types.Stats) uint64 {
-	totalUsage := s.CPUStats.CPUUsage.TotalUsage
-	preTotalUsage := s.PreCPUStats.CPUUsage.TotalUsage
-	systemCPUUsage := s.CPUStats.SystemUsage
-	preSystemCPUUsage := s.PreCPUStats.SystemUsage
+	totalUsage := float64(s.CPUStats.CPUUsage.TotalUsage)
+	preTotalUsage := float64(s.PreCPUStats.CPUUsage.TotalUsage)
+	systemCPUUsage := float64(s.CPUStats.SystemUsage)
+	preSystemCPUUsage := float64(s.PreCPUStats.SystemUsage)
 
-	return (totalUsage - preTotalUsage) / (systemCPUUsage - preSystemCPUUsage) * 100
+	u := (totalUsage - preTotalUsage) / (systemCPUUsage - preSystemCPUUsage) * 100
+	return uint64(u)
 }
 
 // ShouldAlertCPU returns true if the limit is breached
@@ -155,16 +183,16 @@ func (c *AlertdContainer) CheckCPUUsage(s *types.Stats) {
 	case c.CPUCheck.Limit == 0:
 		// do nothing because the check is disabled
 	case a && !c.CPUCheck.AlertActive:
-		c.Alert.Add("%s: exceed CPU alert (limit: %d): current usage: %d",
+		c.Alert.Add(ErrCPUCheckFail, nil, "%s: CPU limit: %d, current usage: %d",
 			c.Name, c.CPUCheck.Limit, u)
 
-		c.CPUCheck.AlertActive = true
+		c.CPUCheck.ToggleAlertActive()
 
 	case !a && c.CPUCheck.AlertActive:
-		c.Alert.Add("%s: CPU level recovered (limit: %d): current usage %d",
+		c.Alert.Add(ErrCPUCheckRecovered, nil, "%s: CPU limit: %d, current usage %d",
 			c.Name, c.CPUCheck.Limit, u)
 
-		c.CPUCheck.AlertActive = false
+		c.CPUCheck.ToggleAlertActive()
 	}
 }
 
@@ -181,16 +209,16 @@ func (c *AlertdContainer) CheckMinPids(s *types.Stats) {
 	case c.PIDCheck.Limit == 0:
 		// do nothing because the check is disabled
 	case a && !c.PIDCheck.AlertActive:
-		c.Alert.Add("%s: failed Min PID check (minimum %d): current PIDs: %d",
+		c.Alert.Add(ErrMinPIDCheckFail, nil, "%s: minimum PIDs: %d, current PIDs: %d",
 			c.Name, c.PIDCheck.Limit, s.PidsStats.Current)
 
-		c.PIDCheck.AlertActive = true
+		c.PIDCheck.ToggleAlertActive()
 
 	case !a && c.PIDCheck.AlertActive:
-		c.Alert.Add("%s: recovered Min PID check (minimum %d): current PIDs: %d",
+		c.Alert.Add(ErrMinPIDCheckRecovered, nil, "%s: minimum PIDs: %d, current PIDs: %d",
 			c.Name, c.PIDCheck.Limit, s.PidsStats.Current)
 
-		c.PIDCheck.AlertActive = false
+		c.PIDCheck.ToggleAlertActive()
 	}
 }
 
@@ -217,15 +245,15 @@ func (c *AlertdContainer) CheckMemory(s *types.Stats) {
 	case c.MemCheck.Limit == 0:
 		// do nothing because the check is disabled
 	case a && !c.MemCheck.AlertActive:
-		c.Alert.Add("%s: exceeded memory usage limit (limit: %d): currently using: %d",
+		c.Alert.Add(ErrMemCheckFail, nil, "%s: Memory limit: %d, current usage: %d",
 			c.Name, c.MemCheck.Limit, u)
 
-		c.MemCheck.AlertActive = true
+		c.MemCheck.ToggleAlertActive()
 
-	case a && c.MemCheck.AlertActive:
-		c.Alert.Add("%s: recovered memory usage limit (limit: %d): currently using: %d",
+	case !a && c.MemCheck.AlertActive:
+		c.Alert.Add(ErrMemCheckRecovered, nil, "%s: Memory limit: %d, current usage: %d",
 			c.Name, c.MemCheck.Limit, u)
 
-		c.MemCheck.AlertActive = false
+		c.MemCheck.ToggleAlertActive()
 	}
 }

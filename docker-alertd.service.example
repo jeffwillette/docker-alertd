@@ -4,7 +4,7 @@ After=docker.service
 
 [Service]
 Type=simple
-ExecStart=/path/docker-alertd -f /path/docker-alertd.conf.json
+ExecStart=/path/docker-alertd --config /path/docker-alertd.conf.json
 
 [Install]
 WantedBy=multi-user.target

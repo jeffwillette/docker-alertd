@@ -62,18 +62,23 @@ func init() {
 }
 
 var config = []byte(`---
-# In yaml, 'containers' is an array of dictionaries that each contain the name of the
-# container to monitor, and the metrics which it should be monitored by. If there are no 
-# metrics present, then it will just be monitored to make sure that is is currently up.
+duration: 100				# duration in ms between docker API calls
+iterations: 0				# number of iterations to run (0 = run forever)
+
+# 'containers' is an array of dictionaries that each contain the name of a container to
+# monitor, and the metrics which it should be monitored by. If there are no metrics
+# present, then it will just be monitored to make sure that is is currently up.
+
+# This will monitor only that the container exists, running or not...
+# containers:
+#   - name: mycontainer
+
 containers:
   - name: container1
-  	expectedRunning: true
-    maxCpu: 0
-    maxMem: 20
-    minProcs: 3
+    expectedRunning: true
 
   - name: container2
-  	expectedRunning: true
+    expectedRunning: true
     maxCpu: 20
     maxMem: 20
     minProcs: 4

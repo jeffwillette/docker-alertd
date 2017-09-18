@@ -13,7 +13,7 @@
   <key>ProgramArguments</key>
     <array>
       <string>/full/path/to/binary/docker-alertd</string>
-      <string>-f</string>
+      <string>--config</string>
       <string>/full/path/to/config/file</string>
     </array>
   <key>RunAtLoad</key>
