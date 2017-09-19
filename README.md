@@ -25,12 +25,9 @@ Assuming that you already have `go` installed on your machine, you can just `go 
 go get github.com/deltaskelta/docker-alertd
 ```
 
-##### If you would like to download a pre-compiled binary then you can choose from one of the
-releases below...
+##### If you would like to download a pre-compiled binary, head to the release downloads
 
-### [MacOS](https://github.com/deltaskelta/docker-alertd/raw/release/dist/mac/docker-alertd)
-### [Linux](https://github.com/deltaskelta/docker-alertd/raw/release/dist/linux/docker-alertd)
-### [Windows](https://github.com/deltaskelta/docker-alertd/raw/release/dist/windows/docker-alertd.exe)
+[latest release - precompiled binary download](https://github.com/deltaskelta/docker-alertd/releases/latest)
 
 # Step 2: Make a Configuration File
 
