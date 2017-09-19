@@ -33,8 +33,6 @@ var testalertCmd = &cobra.Command{
 			},
 		}
 
-		Config.EmailSettings.Subject = "TEST: DOCKER-ALERTD"
-
 		err := Config.Validate()
 		if err != nil {
 			log.Println(err)
