@@ -10,6 +10,45 @@ import (
 	"github.com/pkg/errors"
 )
 
+// these errors are for the purpose of being able to compare them later
+var (
+	ErrEmptyConfig           = errors.New("The configuration is completely empty (check config file)")
+	ErrEmailNoSMTP           = errors.New("no email SMTP server")
+	ErrEmailNoTo             = errors.New("no email to addresses")
+	ErrEmailNoFrom           = errors.New("no email from addresses")
+	ErrEmailNoPass           = errors.New("no email password")
+	ErrEmailNoPort           = errors.New("no email port")
+	ErrEmailNoSubject        = errors.New("no email subject")
+	ErrNoContainers          = errors.New("There were no containers found in the configuration file")
+	ErrExistCheckFail        = errors.New("Existence check failure")
+	ErrExistCheckRecovered   = errors.New("Existence check recovered")
+	ErrRunningCheckFail      = errors.New("Running check failure")
+	ErrRunningCheckRecovered = errors.New("Running check recovered")
+	ErrCPUCheckFail          = errors.New("CPU check failure")
+	ErrCPUCheckRecovered     = errors.New("CPU check recovered")
+	ErrMemCheckFail          = errors.New("Memory check failure")
+	ErrMemCheckRecovered     = errors.New("Memory check recovered")
+	ErrMinPIDCheckFail       = errors.New("Min PID check Failure")
+	ErrMinPIDCheckRecovered  = errors.New("Min PID check recovered")
+	ErrMaxPIDCheckFail       = errors.New("Max PID check Failure")
+	ErrMaxPIDCheckRecovered  = errors.New("Max PID check recovered")
+	ErrUnknown               = errors.New("Received an unknown error")
+)
+
+// ErrContainsErr returns true if the error string contains the message
+func ErrContainsErr(e, b error) bool {
+	switch {
+	case e == nil && b == nil:
+		return true // they are both nil and essentially equal
+	case e == nil || b == nil:
+		return false // one of them is nil (previous case took care of both nils)
+	case strings.Contains(e.Error(), b.Error()):
+		return true // b is within a
+	default:
+		return false
+	}
+}
+
 // Container gets data from the Unmarshaling of the configuration file JSON and stores
 // the data throughout the course of the monitor.
 type Container struct {
@@ -20,9 +59,14 @@ type Container struct {
 	ExpectedRunning bool
 }
 
+// Alerter is the interface which will handle alerting via different methods such as email
+// and twitter/slack
+type Alerter interface {
+	Alert(a *Alert) error
+}
+
 // EmailSettings implements the Alerter interface and sends emails
 type EmailSettings struct {
-	Active   bool
 	SMTP     string
 	Password string
 	Port     string
@@ -31,73 +75,114 @@ type EmailSettings struct {
 	Subject  string
 }
 
+// Alert sends an email alert
+func (e EmailSettings) Alert(a *Alert) error {
+	// alerts in string form
+	alerts := a.Dump()
+
+	// The email message formatted properly
+	formattedMsg := []byte(fmt.Sprintf("To: %s\r\nSubject: %s\r\n\r\n%s\r\n",
+		e.To, e.Subject, alerts))
+
+	// Set up authentication/address information
+	auth := smtp.PlainAuth("", e.From, e.Password, e.SMTP)
+	addr := fmt.Sprintf("%s:%s", e.SMTP, e.Port)
+
+	err := smtp.SendMail(addr, auth, e.From, e.To, formattedMsg)
+	if err != nil {
+		return errors.Wrap(err, "error sending email")
+	}
+
+	log.Println("alert email sent")
+
+	return nil
+}
+
+// Valid returns true if the email settings are complete
+func (e *EmailSettings) Valid() error {
+	errString := []string{}
+
+	if e.SMTP == "" {
+		errString = append(errString, ErrEmailNoSMTP.Error())
+	}
+
+	if len(e.To) < 1 {
+		errString = append(errString, ErrEmailNoTo.Error())
+	}
+
+	if e.From == "" {
+		errString = append(errString, ErrEmailNoFrom.Error())
+	}
+
+	if e.Password == "" {
+		errString = append(errString, ErrEmailNoPass.Error())
+	}
+
+	if e.Port == "" {
+		errString = append(errString, ErrEmailNoPort.Error())
+	}
+
+	if e.Subject == "" {
+		errString = append(errString, ErrEmailNoSubject.Error())
+	}
+
+	if len(errString) == 0 {
+		return nil
+	}
+
+	delimErr := strings.Join(errString, ", ")
+	err := errors.New(delimErr)
+
+	return errors.Wrap(err, "email settings validation fail")
+}
+
 // Conf struct that combines containers and email settings structs
 type Conf struct {
 	Containers    []Container
 	EmailSettings EmailSettings
 	Iterations    int64
 	Duration      int64
-}
-
-// these errors are for the purpose of being able to compare them later
-var (
-	ExistFailMsg             = "Existence check failure"
-	ExistRecoverMsg          = "Existence check recovered"
-	RunningCheckFailMsg      = "Running check failure"
-	RunningCheckRecoveredMsg = "Running check recovered"
-	CPUCheckFailMsg          = "CPU check failure"
-	CPUCheckRecoveredMsg     = "CPu check recovered"
-	MemCheckFailMsg          = "Memory check failure"
-	MemCheckRecoverMsg       = "Memory check recovered"
-	MinPIDCheckFailMsg       = "Min PID check Failure"
-	MinPIDCheckRecoverMsg    = "Min PID check recovered"
-	MaxPIDCheckFailMsg       = "Max PID check Failure"
-	MaxPIDCheckRecoveredMsg  = "Max PID check recovered"
-	UnknownErrMsg            = "Received an unknown error"
-
-	ErrEmptyConfig           = errors.New("The configuration cannot be empty, do you have a config file?")
-	ErrNoContainers          = errors.New("There were no containers found in the configuration file")
-	ErrExistCheckFail        = errors.New(ExistFailMsg)
-	ErrExistCheckRecovered   = errors.New(ExistRecoverMsg)
-	ErrRunningCheckFail      = errors.New(RunningCheckFailMsg)
-	ErrRunningCheckRecovered = errors.New(RunningCheckRecoveredMsg)
-	ErrCPUCheckFail          = errors.New(CPUCheckFailMsg)
-	ErrCPUCheckRecovered     = errors.New(CPUCheckRecoveredMsg)
-	ErrMemCheckFail          = errors.New(MemCheckFailMsg)
-	ErrMemCheckRecovered     = errors.New(MemCheckRecoverMsg)
-	ErrMinPIDCheckFail       = errors.New(MinPIDCheckFailMsg)
-	ErrMinPIDCheckRecovered  = errors.New(MinPIDCheckRecoverMsg)
-	ErrMaxPIDCheckFail       = errors.New(MaxPIDCheckFailMsg)
-	ErrMaxPIDCheckRecovered  = errors.New(MaxPIDCheckRecoveredMsg)
-	ErrUnknown               = errors.New(UnknownErrMsg)
-)
-
-// ErrIsErr returns true if the error string contains the message
-func ErrIsErr(e error, baseErr string) bool {
-	if strings.Contains(e.Error(), baseErr) {
-		return true
-	}
-	return false
+	Alerters      []Alerter
 }
 
 // Validate validates the configuration that was passed in
-func (c *Conf) Validate() (err error) {
-	switch {
-	case reflect.DeepEqual(&Conf{}, c):
-		return ErrEmptyConfig
-	case len(c.Containers) < 1:
-		return ErrNoContainers
+func (c *Conf) Validate() error {
+	// the error to wrap and return at the end
+	errString := []string{}
+
+	if reflect.DeepEqual(&Conf{}, c) {
+		errString = append(errString, ErrEmptyConfig.Error())
 	}
 
-	return nil
+	if len(c.Containers) < 1 {
+		errString = append(errString, ErrNoContainers.Error())
+	}
+
+	e := c.EmailSettings.Valid()
+	switch {
+	case reflect.DeepEqual(EmailSettings{}, c.EmailSettings):
+		// do nothing because the settings are empty and assumed omitted
+	case e != nil:
+		errString = append(errString, e.Error())
+	default:
+		c.Alerters = append(c.Alerters, c.EmailSettings)
+	}
+
+	if len(errString) == 0 {
+		return nil
+	}
+
+	delimErr := strings.Join(errString, ", ")
+	err := errors.New(delimErr)
+
+	return errors.Wrap(err, "config validation fail")
 }
 
-// Alerter is something that can send an alert either via email, or slack, etc.
-type Alerter interface {
-	Alert() error
+// Evaluator evaluates a set of alerts and decides if they need to be sent
+type Evaluator interface {
+	Send(a []Alerter)
 	ShouldSend() bool
 	Evaluate()
-	Email(e *EmailSettings) error
 }
 
 // Alert is the struct that stores information about alerts and its methods satisfy the
@@ -114,10 +199,7 @@ func (a *Alert) ShouldSend() bool {
 // Evaluate will check if error should be sent and then trigger it if necessary
 func (a *Alert) Evaluate() {
 	if a.ShouldSend() {
-		err := a.Alert()
-		if err != nil {
-			log.Println(err)
-		}
+		a.Send(Config.Alerters)
 	}
 }
 
@@ -160,32 +242,24 @@ func (a *Alert) Clear() {
 	a.Messages = []error{}
 }
 
-// Alert is for sending out alerts to syslog and to alerts that are active in conf
-func (a *Alert) Alert() error {
-	a.Log()
-	//go func() {
-	//	err := alert.Email(&c.EmailSettings)
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//	log.Println("alert email sent")
-	//}()
-	return nil
+// Dump takes the slice of alerts and dumps them to a single string
+func (a *Alert) Dump() string {
+	s := ""
+	for _, v := range a.Messages {
+		s += fmt.Sprintf("%s\n\n", v.Error())
+	}
+	return s
 }
 
-// Email sends an email alert
-func (a *Alert) Email(e *EmailSettings) error {
-	// The email message formatted properly
-	formattedMsg := []byte(fmt.Sprintf("To: %s\r\nSubject: %s\r\n\r\n%v\r\n",
-		e.To, e.Subject, a))
-
-	// Set up authentication/address information
-	auth := smtp.PlainAuth("", e.From, e.Password, e.SMTP)
-	addr := fmt.Sprintf("%s:%s", e.SMTP, e.Port)
-
-	err := smtp.SendMail(addr, auth, e.From, e.To, formattedMsg)
-	if err != nil {
-		return err
+// Send is for sending out alerts to syslog and to alerts that are active in conf
+func (a *Alert) Send(b []Alerter) {
+	a.Log()
+	for i := range b {
+		go func(c Alerter) {
+			err := c.Alert(a)
+			if err != nil {
+				log.Println(err)
+			}
+		}(b[i])
 	}
-	return nil
 }

@@ -118,18 +118,14 @@ func Monitor(c *Conf, a *Alert) {
 		for {
 			a.Clear()
 			CheckContainers(cnt, cli, a)
-			if a.ShouldSend() {
-				a.Alert()
-			}
+			a.Evaluate()
 			time.Sleep(time.Duration(c.Duration) * time.Millisecond)
 		}
 	default:
 		for i := int64(0); i < c.Iterations; i++ {
 			a.Clear()
 			CheckContainers(cnt, cli, a)
-			if a.ShouldSend() {
-				a.Alert()
-			}
+			a.Evaluate()
 			time.Sleep(time.Duration(c.Duration) * time.Millisecond)
 		}
 	}

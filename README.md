@@ -151,3 +151,9 @@ Refer to the [launchd plist example file](https://github.com/deltaskelta/docker-
 ### With Sys V Init (various Linux systems without systemd)
 
 Refer to this [Sys V Init tutorial](https://www.cyberciti.biz/tips/linux-write-sys-v-init-script-to-start-stop-service.html)
+
+### Testing Alert Authentication
+
+Docker-Alertd comes with a `testalert` command which will search for a nonexistant
+container name and send an alert to the appropriate places, use this for testing that
+smtp or other authentication settings are correct

@@ -42,7 +42,7 @@ the docker api.`,
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 
-		log.Println(Config)
+		//log.Println(Config)
 		err := Config.Validate()
 		if err != nil {
 			log.Println(err)

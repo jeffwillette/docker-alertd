@@ -105,9 +105,9 @@ func Teardown(t *testing.T, cnt []TestContainer) {
 	}
 }
 
-func CheckHasErr(e []error, s string) bool {
-	for _, msg := range e {
-		if ErrIsErr(msg, s) {
+func CheckHasErr(e []error, s error) bool {
+	for _, err := range e {
+		if ErrContainsErr(err, s) {
 			return true
 		}
 	}
@@ -210,7 +210,7 @@ func TestCheckExists(t *testing.T) {
 			}
 
 			if test.ExpectedAlert != nil {
-				gotErr := CheckHasErr(a.Messages, test.ExpectedAlert.Error())
+				gotErr := CheckHasErr(a.Messages, test.ExpectedAlert)
 				if !gotErr {
 					t.Errorf("expected error message: %s not found in error messages", test.ExpectedAlert.Error())
 					t.Error(a.Messages)
@@ -330,7 +330,7 @@ func TestCheckRunning(t *testing.T) {
 			}
 
 			if test.ExpectedAlert != nil {
-				gotErr := CheckHasErr(a.Messages, test.ExpectedAlert.Error())
+				gotErr := CheckHasErr(a.Messages, test.ExpectedAlert)
 				if !gotErr {
 					t.Errorf("expected error message: %s not found in error messages", test.ExpectedAlert.Error())
 					t.Error(a.Messages)
@@ -453,7 +453,7 @@ func TestCheckCPUUsage(t *testing.T) {
 			}
 
 			if test.ExpectedAlert != nil {
-				gotErr := CheckHasErr(a.Messages, test.ExpectedAlert.Error())
+				gotErr := CheckHasErr(a.Messages, test.ExpectedAlert)
 				if !gotErr {
 					t.Errorf("expected error message: %s not found in error messages", test.ExpectedAlert.Error())
 					t.Error(a.Messages)
@@ -576,7 +576,7 @@ func TestCheckMemory(t *testing.T) {
 			}
 
 			if test.ExpectedAlert != nil {
-				gotErr := CheckHasErr(a.Messages, test.ExpectedAlert.Error())
+				gotErr := CheckHasErr(a.Messages, test.ExpectedAlert)
 				if !gotErr {
 					t.Errorf("expected error message: %s not found in error messages", test.ExpectedAlert.Error())
 					t.Error(a.Messages)
@@ -707,7 +707,7 @@ func TestCheckPID(t *testing.T) {
 			}
 
 			if test.ExpectedAlert != nil {
-				gotErr := CheckHasErr(a.Messages, test.ExpectedAlert.Error())
+				gotErr := CheckHasErr(a.Messages, test.ExpectedAlert)
 				if !gotErr {
 					t.Errorf("expected error message: %s not found in error messages", test.ExpectedAlert.Error())
 					t.Error(a.Messages)

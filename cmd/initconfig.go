@@ -86,8 +86,7 @@ containers:
 # If email settings are present and active, then email alerts will be sent when an alert
 # is triggered.
 emailSettings:
-  active: true
-  smtp: smtp.someserver.com
+  smtp: smtp.nonexistantserver.com
   password: s00p3rS33cret
   port: 587
   from: auto@freshpowpow.com
