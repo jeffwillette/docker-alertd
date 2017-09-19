@@ -112,6 +112,11 @@ be triggered.
 
 `to`: an array of email addresses to send the alerts to
 
+#### Slack Settings
+
+`webhookURL`: the webhookURL provided by slack after you authorize an app on a slack
+channel. See [slack apps](https://api.slack.com/apps)
+
 # Step 3: Run the program
 
 ```

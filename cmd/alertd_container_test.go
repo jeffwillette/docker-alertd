@@ -15,7 +15,7 @@ import (
 var cli *client.Client
 
 var (
-	stress = "deltaskelta/alpine-stress"
+	stress = "deltaskelta/alpine-stress:latest"
 )
 
 func TestMain(m *testing.M) {
@@ -23,6 +23,27 @@ func TestMain(m *testing.M) {
 	cli, err = client.NewEnvClient()
 	if err != nil {
 		log.Println(err)
+	}
+
+	images, err := cli.ImageList(context.TODO(), types.ImageListOptions{})
+	if err != nil {
+		log.Println(err)
+	}
+
+	hasImg := false
+	for _, v := range images {
+		for _, s := range v.RepoTags {
+			if s == stress {
+				hasImg = true
+			}
+		}
+	}
+
+	if !hasImg {
+		_, err := cli.ImagePull(context.TODO(), stress, types.ImagePullOptions{})
+		if err != nil {
+			log.Println(err)
+		}
 	}
 
 	code := m.Run()

@@ -34,7 +34,7 @@ func TestConfigValidate(t *testing.T) {
 						Name: "some_container",
 					},
 				},
-				EmailSettings: EmailSettings{
+				Email: Email{
 					From:     "some@email.com",
 					Password: "soopersecret",
 					Port:     "587",
@@ -53,7 +53,7 @@ func TestConfigValidate(t *testing.T) {
 						Name: "some_container",
 					},
 				},
-				EmailSettings: EmailSettings{
+				Email: Email{
 					Password: "soopersecret",
 					Port:     "587",
 					SMTP:     "smtp@someserver.com",

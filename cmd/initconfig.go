@@ -83,9 +83,12 @@ containers:
     maxMem: 20
     minProcs: 4
 
-# If email settings are present and active, then email alerts will be sent when an alert
-# is triggered.
-emailSettings:
+## ALERTERS...
+## If any of the below alerters are present, alerts will be sent through the proper 
+## channels. Completely delete the relevant section to disable them. To Test if an alerter
+## authenticates properly, run the "testalert" command
+
+email:
   smtp: smtp.nonexistantserver.com
   password: s00p3rS33cret
   port: 587
@@ -93,4 +96,9 @@ emailSettings:
   subject: "DOCKER_ALERTD"
   to:
     - jeff@gnarfresh.com
+
+# You need to start a slack channel and activate an app to get a webhookURL for your channel
+# see https://api.slack.com/apps for more information
+slack:
+  webhookURL: https://some.url/provided/by/slack/
 `)

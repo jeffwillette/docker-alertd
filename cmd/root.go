@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -111,4 +113,88 @@ func initConfig() {
 	if err != nil {
 		log.Println(errors.Wrap(err, "unmarshal config file"))
 	}
+}
+
+// Container gets data from the Unmarshaling of the configuration file JSON and stores
+// the data throughout the course of the monitor.
+type Container struct {
+	Name            string
+	MaxCPU          uint64
+	MaxMem          uint64
+	MinProcs        uint64
+	ExpectedRunning bool
+}
+
+// Conf struct that combines containers and email settings structs
+type Conf struct {
+	Containers []Container
+	Email      Email
+	Slack      Slack
+	Iterations int64
+	Duration   int64
+	Alerters   []Alerter
+}
+
+// ValidateEmailSettings calls valid on the Email settings and adds them to the alerters
+// if everything is ok
+func (c *Conf) ValidateEmailSettings() error {
+	err := c.Email.Valid()
+	switch {
+	case reflect.DeepEqual(Email{}, c.Email):
+		return nil
+	case err != nil:
+		return err
+	default:
+		c.Alerters = append(c.Alerters, c.Email)
+		log.Println("email alerts active")
+		return nil
+	}
+}
+
+// ValidateSlackSettings validates slack settings and adds it to the alerters
+func (c *Conf) ValidateSlackSettings() error {
+	err := c.Slack.Valid()
+	switch {
+	case reflect.DeepEqual(Slack{}, c.Slack):
+		return nil // assume that slack was omitted and not wanted
+	case err != nil:
+		return err
+	default:
+		c.Alerters = append(c.Alerters, c.Slack)
+		log.Println("slack alerts active")
+		return nil
+	}
+}
+
+// Validate validates the configuration that was passed in
+func (c *Conf) Validate() error {
+	// the error to wrap and return at the end
+	errString := []string{}
+
+	if reflect.DeepEqual(&Conf{}, c) {
+		errString = append(errString, ErrEmptyConfig.Error())
+	}
+
+	if len(c.Containers) < 1 {
+		errString = append(errString, ErrNoContainers.Error())
+	}
+
+	if err := c.ValidateEmailSettings(); err != nil {
+		errString = append(errString, err.Error())
+	}
+
+	if err := c.ValidateSlackSettings(); err != nil {
+		errString = append(errString, err.Error())
+	}
+
+	// if the length of the string of errors is 0 then everything has completed
+	// successfully and everything is valid.
+	if len(errString) == 0 {
+		return nil
+	}
+
+	delimErr := strings.Join(errString, ", ")
+	err := errors.New(delimErr)
+
+	return errors.Wrap(err, "config validation fail")
 }
