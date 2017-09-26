@@ -4,6 +4,8 @@
 
 ## What Does It Do?
 
+![docker-alertd](./docker-alertd.gif)
+
 docker-alertd monitors docker containers on a host machine and sends alerts via email when
 usage limits have been breached.
 
