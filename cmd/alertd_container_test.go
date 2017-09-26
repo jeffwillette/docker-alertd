@@ -40,10 +40,8 @@ func TestMain(m *testing.M) {
 	}
 
 	if !hasImg {
-		_, err := cli.ImagePull(context.TODO(), stress, types.ImagePullOptions{})
-		if err != nil {
-			log.Println(err)
-		}
+		log.Println("need docker image 'deltaskelta/alpine-stress' for testing")
+		os.Exit(-1)
 	}
 
 	code := m.Run()

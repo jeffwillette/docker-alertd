@@ -5,6 +5,7 @@ services:
   - docker
 
 script:
+  - docker pull deltaskelta/alpine-stress
   - go test ./cmd
   - go test 
   - go install
