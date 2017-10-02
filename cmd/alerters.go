@@ -136,3 +136,56 @@ func (s Slack) Alert(a *Alert) error {
 	log.Println("sent alert to slack")
 	return nil
 }
+
+// Pushover contains all info needed to push a notification to Pushover api
+type Pushover struct {
+	ApiToken string
+	UserKey string
+	ApiURL string
+}
+
+// Valid returns an error if pushover settings are invalid
+func (s Pushover) Valid() error {
+	errString := []string{}
+
+	if reflect.DeepEqual(Slack{}, s) {
+		return nil // assume that pushover was omitted
+	}
+
+	if s.ApiToken == "" {
+		errString = append(errString, ErrPushoverApiToken.Error())
+	}
+
+	if s.UserKey == "" {
+		errString = append(errString, ErrPushoverUserKey.Error())
+	}
+
+	if s.ApiURL == "" {
+		errString = append(errString, ErrPushoverApiURL.Error())
+	}
+
+	if len(errString) == 0 {
+		return nil
+	}
+
+	delimErr := strings.Join(errString, ", ")
+	err := errors.New(delimErr)
+
+	return errors.Wrap(err, "pushover settings validation fail")
+}
+
+// Alert sends the alert to a slack channel
+func (s Pushover) Alert(a *Alert) error {
+	alerts := a.Dump()
+
+	json := fmt.Sprintf("{\"token\": \"%s\", \"user\": \"%s\", \"message\": \"%s\"}", s.ApiToken, s.UserKey, alerts)
+	body := bytes.NewReader([]byte(json))
+	resp, err := http.Post(s.ApiURL, "application/json", body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	log.Println("sent alert to pushover")
+	return nil
+}
