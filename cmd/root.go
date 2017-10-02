@@ -203,6 +203,10 @@ func (c *Conf) Validate() error {
 		errString = append(errString, err.Error())
 	}
 
+	if err := c.ValidatePushoverSettings(); err != nil {
+		errString = append(errString, err.Error())
+	}
+
 	// if the length of the string of errors is 0 then everything has completed
 	// successfully and everything is valid.
 	if len(errString) == 0 {
