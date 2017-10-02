@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/smtp"
+	"net/url"
 	"reflect"
 	"strings"
 
@@ -174,13 +175,14 @@ func (p Pushover) Valid() error {
 	return errors.Wrap(err, "pushover settings validation fail")
 }
 
-// Alert sends the alert to a slack channel
+// Alert sends the alert to Pushover API
 func (s Pushover) Alert(a *Alert) error {
 	alerts := a.Dump()
 
-	json := fmt.Sprintf("{\"token\": \"%s\", \"user\": \"%s\", \"message\": \"%s\"}", s.ApiToken, s.UserKey, alerts)
-	body := bytes.NewReader([]byte(json))
-	resp, err := http.Post(s.ApiURL, "application/json", body)
+	parsed_body := fmt.Sprintf("token=%s&user=%s&message=%s", s.ApiToken, s.UserKey, url.QueryEscape(alerts))
+	body := bytes.NewBufferString(parsed_body)
+
+	resp, err := http.Post(s.ApiURL, "application/x-www-form-urlencoded", body)
 	if err != nil {
 		return err
 	}
