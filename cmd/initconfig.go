@@ -104,7 +104,7 @@ slack:
 
 # You need to create a pushover account to use this
 # see https://pushover.net for more information
-slack:
+pushover:
   ApiURL: https://some.url/
   ApiToken: your_api_token
   UserKey: your_user_key
