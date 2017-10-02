@@ -101,4 +101,11 @@ email:
 # see https://api.slack.com/apps for more information
 slack:
   webhookURL: https://some.url/provided/by/slack/
+
+# You need to create a pushover account to use this
+# see https://pushover.net for more information
+pushover:
+  ApiURL: https://some.url/
+  ApiToken: your_api_token
+  UserKey: your_user_key
 `)

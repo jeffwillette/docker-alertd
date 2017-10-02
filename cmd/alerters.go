@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/smtp"
+	"net/url"
 	"reflect"
 	"strings"
 
@@ -134,5 +135,59 @@ func (s Slack) Alert(a *Alert) error {
 	defer resp.Body.Close()
 
 	log.Println("sent alert to slack")
+	return nil
+}
+
+// Pushover contains all info needed to push a notification to Pushover api
+type Pushover struct {
+	ApiToken string
+	UserKey string
+	ApiURL string
+}
+
+// Valid returns an error if pushover settings are invalid
+func (p Pushover) Valid() error {
+	errString := []string{}
+
+	if reflect.DeepEqual(Pushover{}, p) {
+		return nil // assume that pushover was omitted
+	}
+
+	if p.ApiToken == "" {
+		errString = append(errString, ErrPushoverApiToken.Error())
+	}
+
+	if p.UserKey == "" {
+		errString = append(errString, ErrPushoverUserKey.Error())
+	}
+
+	if p.ApiURL == "" {
+		errString = append(errString, ErrPushoverApiURL.Error())
+	}
+
+	if len(errString) == 0 {
+		return nil
+	}
+
+	delimErr := strings.Join(errString, ", ")
+	err := errors.New(delimErr)
+
+	return errors.Wrap(err, "pushover settings validation fail")
+}
+
+// Alert sends the alert to Pushover API
+func (s Pushover) Alert(a *Alert) error {
+	alerts := a.Dump()
+
+	parsed_body := fmt.Sprintf("token=%s&user=%s&message=%s", s.ApiToken, s.UserKey, url.QueryEscape(alerts))
+	body := bytes.NewBufferString(parsed_body)
+
+	resp, err := http.Post(s.ApiURL, "application/x-www-form-urlencoded", body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	log.Println("sent alert to pushover")
 	return nil
 }

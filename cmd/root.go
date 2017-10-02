@@ -130,6 +130,7 @@ type Conf struct {
 	Containers []Container
 	Email      Email
 	Slack      Slack
+	Pushover    Pushover
 	Iterations int64
 	Duration   int64
 	Alerters   []Alerter
@@ -166,6 +167,21 @@ func (c *Conf) ValidateSlackSettings() error {
 	}
 }
 
+// ValidatePushoverSettings validates pushover settings and adds it to the alerters
+func (c *Conf) ValidatePushoverSettings() error {
+	err := c.Pushover.Valid()
+	switch {
+	case reflect.DeepEqual(Pushover{}, c.Pushover):
+		return nil // assume that pushover was omitted and not wanted
+	case err != nil:
+		return err
+	default:
+		c.Alerters = append(c.Alerters, c.Pushover)
+		log.Println("pushover alerts active")
+		return nil
+	}
+}
+
 // Validate validates the configuration that was passed in
 func (c *Conf) Validate() error {
 	// the error to wrap and return at the end
@@ -184,6 +200,10 @@ func (c *Conf) Validate() error {
 	}
 
 	if err := c.ValidateSlackSettings(); err != nil {
+		errString = append(errString, err.Error())
+	}
+
+	if err := c.ValidatePushoverSettings(); err != nil {
 		errString = append(errString, err.Error())
 	}
 

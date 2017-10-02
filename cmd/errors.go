@@ -30,6 +30,9 @@ var (
 	ErrMaxPIDCheckFail       = errors.New("Max PID check Failure")
 	ErrMaxPIDCheckRecovered  = errors.New("Max PID check recovered")
 	ErrUnknown               = errors.New("Received an unknown error")
+	ErrPushoverApiToken     = errors.New("no pushover api token")
+	ErrPushoverUserKey     = errors.New("no pushover user key")
+	ErrPushoverApiURL     = errors.New("no pushover api url")
 )
 
 // ErrContainsErr returns true if the error string contains the message
