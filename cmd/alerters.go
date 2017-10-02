@@ -145,22 +145,22 @@ type Pushover struct {
 }
 
 // Valid returns an error if pushover settings are invalid
-func (s Pushover) Valid() error {
+func (p Pushover) Valid() error {
 	errString := []string{}
 
-	if reflect.DeepEqual(Slack{}, s) {
+	if reflect.DeepEqual(Pushover{}, p) {
 		return nil // assume that pushover was omitted
 	}
 
-	if s.ApiToken == "" {
+	if p.ApiToken == "" {
 		errString = append(errString, ErrPushoverApiToken.Error())
 	}
 
-	if s.UserKey == "" {
+	if p.UserKey == "" {
 		errString = append(errString, ErrPushoverUserKey.Error())
 	}
 
-	if s.ApiURL == "" {
+	if p.ApiURL == "" {
 		errString = append(errString, ErrPushoverApiURL.Error())
 	}
 
