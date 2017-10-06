@@ -1,4 +1,4 @@
-DIR=~/docker-alertd-dist
+DIR=./docker-alertd-dist
 
 build:
 	@rm -r $(DIR)

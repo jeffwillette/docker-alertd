@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -23,7 +24,34 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var dir string
+var (
+	dir          string
+	stdout       bool
+	alerterStubs = map[string]*AlerterStub{
+		"email": &AlerterStub{
+			ShouldPrint: false,
+			Bytes:       email,
+		},
+		"slack": &AlerterStub{
+			ShouldPrint: false,
+			Bytes:       slack,
+		},
+		"pushover": &AlerterStub{
+			ShouldPrint: false,
+			Bytes:       pushover,
+		},
+	}
+)
+
+// TODO: add an option to print config to stdout.
+
+// AlerterStub stores the bytes needed for the alerter stub in the config file as well as
+// a boolean value which is evaluated only if the user has supplied specific alerter stubs
+// to include
+type AlerterStub struct {
+	ShouldPrint bool
+	Bytes       []byte
+}
 
 // initconfigCmd represents the initconfig command
 var initconfigCmd = &cobra.Command{
@@ -33,16 +61,48 @@ var initconfigCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		filename := fmt.Sprintf("%s/%s.yaml", dir, confName)
 
+		buffer := bytes.Buffer{}
+		_, err := buffer.Write(config)
+		if err != nil {
+			log.Println(err)
+		}
+
+		switch {
+		case !shouldPrintall():
+			// this case only prints the alerters requested
+			for k, v := range alerterStubs {
+				if v.ShouldPrint {
+					_, err := buffer.Write(v.Bytes)
+					if err != nil {
+						log.Println(err)
+					}
+					log.Printf("added %s alerter stub", k)
+				}
+			}
+		default:
+			// default is to print all the alerters stubs to the config file
+			for _, v := range alerterStubs {
+				_, err := buffer.Write(v.Bytes)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+		}
+
 		// check to see if the file exists before writing the config file
 		file, _ := os.Stat(filename)
 		switch {
 		case file != nil:
 			log.Println("There is already a config file present, please move or delete" +
 				" it before regenerating")
+		case stdout:
+			fmt.Println(buffer.String())
 		default:
-			ioutil.WriteFile(filename, config, 0644)
+			ioutil.WriteFile(filename, buffer.Bytes(), 0644)
+
 			log.Println("config successfully created, it has been filled with an example" +
-				", which needs to be changed in order for docker-alertd to function.")
+				", which includes all possible alerters. The alerter stubs need to be ch" +
+				"anged in order for docker-alertd to function.")
 		}
 	},
 }
@@ -58,7 +118,27 @@ func init() {
 
 	// Cobra supports local flags which will only run when this command
 	initconfigCmd.Flags().StringVarP(&dir, "directory", "d", d, "directory to place config file in")
+	initconfigCmd.Flags().BoolVar(&alerterStubs["email"].ShouldPrint, "email", false, "include email alert stub")
+	initconfigCmd.Flags().BoolVar(&alerterStubs["slack"].ShouldPrint, "slack", false, "include slack alert stub")
+	initconfigCmd.Flags().BoolVar(&alerterStubs["pushover"].ShouldPrint, "pushover", false,
+		"include pushover alert stub")
+	initconfigCmd.Flags().BoolVar(&stdout, "stdout", false, "print config to stdout")
 
+}
+
+// shouldPrintall returns true if all of the alerter stubs should be printed to the config
+// file on initconfig command.
+func shouldPrintall() bool {
+	switch {
+	case alerterStubs["email"].ShouldPrint:
+		return false
+	case alerterStubs["slack"].ShouldPrint:
+		return false
+	case alerterStubs["pushover"].ShouldPrint:
+		return false
+	default:
+		return true
+	}
 }
 
 var config = []byte(`---
@@ -87,7 +167,9 @@ containers:
 ## If any of the below alerters are present, alerts will be sent through the proper 
 ## channels. Completely delete the relevant section to disable them. To Test if an alerter
 ## authenticates properly, run the "testalert" command
+`)
 
+var email = []byte(`
 email:
   smtp: smtp.nonexistantserver.com
   password: s00p3rS33cret
@@ -96,12 +178,16 @@ email:
   subject: "DOCKER_ALERTD"
   to:
     - jeff@gnarfresh.com
+`)
 
+var slack = []byte(`
 # You need to start a slack channel and activate an app to get a webhookURL for your channel
 # see https://api.slack.com/apps for more information
 slack:
   webhookURL: https://some.url/provided/by/slack/
+`)
 
+var pushover = []byte(`
 # You need to create a pushover account to use this
 # see https://pushover.net for more information
 pushover:
