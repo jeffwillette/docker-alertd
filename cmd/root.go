@@ -44,7 +44,6 @@ the docker api.`,
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 
-		//log.Println(Config)
 		err := Config.Validate()
 		if err != nil {
 			log.Println(err)
@@ -83,8 +82,8 @@ func init() {
 	viper.BindPFlag("iterations", RootCmd.PersistentFlags().Lookup("iterations"))
 	viper.BindPFlag("duration", RootCmd.PersistentFlags().Lookup("duration"))
 
-	// when this action is called directly.
-	//RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// local flags for when this action is called directly.
+	//RootCmd.Flags().BoolVarP(&version, "version", "v", false, "Print `docker-alertd` version")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -130,7 +129,7 @@ type Conf struct {
 	Containers []Container
 	Email      Email
 	Slack      Slack
-	Pushover    Pushover
+	Pushover   Pushover
 	Iterations int64
 	Duration   int64
 	Alerters   []Alerter
