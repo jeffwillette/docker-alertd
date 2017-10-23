@@ -46,8 +46,10 @@ docker-alertd initconfig -d /path/to/config/location/
 ##### Example `.docker-alertd.yaml` file
 ```yaml
 ---
-duration: 100				# duration in ms between docker API calls
-iterations: 0				# number of iterations to run (0 = run forever)
+# The duration and interations settings, if omitted, have a default value of 100ms between
+# docker API calls and an indefinite number of iterations which will run the monitor forever
+#duration: 100				# duration in ms between docker API calls
+#iterations: 0				# number of iterations to run
 
 # 'containers' is an array of dictionaries that each contain the name of a container to
 # monitor, and the metrics which it should be monitored by. If there are no metrics

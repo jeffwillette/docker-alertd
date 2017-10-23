@@ -6,12 +6,10 @@ import (
 	"github.com/docker/docker/api/types"
 )
 
-// TODO: stopped here, write tests that start containers > release
-
 // MetricCheck stores the name of the alert, a function, and a active boolean
 type MetricCheck struct {
 	AlertActive bool
-	Limit       uint64
+	Limit       *uint64
 }
 
 // ToggleAlertActive changes the state of the alert
@@ -23,7 +21,7 @@ func (c *MetricCheck) ToggleAlertActive() {
 // statistics, like its existence, whether it is running or not, etc.
 type StaticCheck struct {
 	AlertActive bool
-	Expected    bool
+	Expected    *bool
 }
 
 // ToggleAlertActive changes the state of the alert
@@ -61,16 +59,22 @@ func (c *AlertdContainer) CheckMetrics(s *types.Stats, e error) {
 	case e != nil:
 		c.Alert.Add(e, nil, "Received an unknown error")
 	default:
-		c.CheckCPUUsage(s)
-		c.CheckMinPids(s)
-		c.CheckMemory(s)
+		if c.CPUCheck.Limit != nil {
+			c.CheckCPUUsage(s)
+		}
+		if c.PIDCheck.Limit != nil {
+			c.CheckMinPids(s)
+		}
+		if c.MemCheck.Limit != nil {
+			c.CheckMemory(s)
+		}
 	}
 }
 
 // CheckStatics will run all of the static checks that are listed for a container.
 func (c *AlertdContainer) CheckStatics(j *types.ContainerJSON, e error) {
 	c.CheckExists(e)
-	if j != nil {
+	if j != nil && c.RunningCheck.Expected != nil {
 		c.CheckRunning(j)
 	}
 }
@@ -83,7 +87,7 @@ func (c *AlertdContainer) ChecksShouldStop() bool {
 		return true
 	case c.ExistenceCheck.AlertActive:
 		return true
-	case !c.RunningCheck.Expected:
+	case c.RunningCheck.Expected != nil && !*c.RunningCheck.Expected:
 		return true
 	case c.Alert.ShouldSend():
 		return true
@@ -137,7 +141,7 @@ func (c *AlertdContainer) CheckExists(e error) {
 // ShouldAlertRunning returns whether the running state is as expected
 func (c *AlertdContainer) ShouldAlertRunning(j *types.ContainerJSON) bool {
 	// if they are not equal, return true (send alert)
-	return c.RunningCheck.Expected != j.State.Running
+	return *c.RunningCheck.Expected != j.State.Running
 }
 
 // CheckRunning will check to see if the container is currently running or not
@@ -170,7 +174,7 @@ func (c *AlertdContainer) RealCPUUsage(s *types.Stats) uint64 {
 
 // ShouldAlertCPU returns true if the limit is breached
 func (c *AlertdContainer) ShouldAlertCPU(u uint64) bool {
-	return u > c.CPUCheck.Limit
+	return u > *c.CPUCheck.Limit
 }
 
 // CheckCPUUsage takes care of sending the alerts if they are needed
@@ -180,8 +184,6 @@ func (c *AlertdContainer) CheckCPUUsage(s *types.Stats) {
 	a := c.ShouldAlertCPU(u)
 
 	switch {
-	case c.CPUCheck.Limit == 0:
-		// do nothing because the check is disabled
 	case a && !c.CPUCheck.AlertActive:
 		c.Alert.Add(ErrCPUCheckFail, nil, "%s: CPU limit: %d, current usage: %d",
 			c.Name, c.CPUCheck.Limit, u)
@@ -198,7 +200,7 @@ func (c *AlertdContainer) CheckCPUUsage(s *types.Stats) {
 
 // ShouldAlertMinPIDS returns true if the minPID check fails
 func (c *AlertdContainer) ShouldAlertMinPIDS(s *types.Stats) bool {
-	return s.PidsStats.Current < c.PIDCheck.Limit
+	return s.PidsStats.Current < *c.PIDCheck.Limit
 }
 
 // CheckMinPids uses the min pids setting and check the number of PIDS in the container
@@ -206,7 +208,7 @@ func (c *AlertdContainer) ShouldAlertMinPIDS(s *types.Stats) bool {
 func (c *AlertdContainer) CheckMinPids(s *types.Stats) {
 	a := c.ShouldAlertMinPIDS(s)
 	switch {
-	case c.PIDCheck.Limit == 0:
+	case c.PIDCheck.Limit == nil:
 		// do nothing because the check is disabled
 	case a && !c.PIDCheck.AlertActive:
 		c.Alert.Add(ErrMinPIDCheckFail, nil, "%s: minimum PIDs: %d, current PIDs: %d",
@@ -231,7 +233,7 @@ func (c *AlertdContainer) MemUsageMB(s *types.Stats) uint64 {
 func (c *AlertdContainer) ShouldAlertMemory(s *types.Stats) bool {
 	// Memory level in MB
 	u := c.MemUsageMB(s)
-	return u > c.MemCheck.Limit
+	return u > *c.MemCheck.Limit
 }
 
 // CheckMemory checks the memory used by the container in MB, returns true if an
@@ -242,7 +244,7 @@ func (c *AlertdContainer) CheckMemory(s *types.Stats) {
 	a := c.ShouldAlertMemory(s)
 
 	switch {
-	case c.MemCheck.Limit == 0:
+	case c.MemCheck.Limit == nil:
 		// do nothing because the check is disabled
 	case a && !c.MemCheck.AlertActive:
 		c.Alert.Add(ErrMemCheckFail, nil, "%s: Memory limit: %d, current usage: %d",
