@@ -10,6 +10,23 @@ import (
 	"github.com/docker/docker/client"
 )
 
+func uint64P(u uint64) *uint64 {
+	p := u
+	return &p
+}
+
+// intP returns a pointer to an int
+func int64P(i int64) *int64 {
+	p := i
+	return &p
+}
+
+// boolP returns a pointer to a bool
+func boolP(b bool) *bool {
+	p := b
+	return &p
+}
+
 // GetStats just uses the docker API and an already tested Unmarshal function, no
 // testing needed.
 func GetStats(a *AlertdContainer, c *client.Client) (*types.Stats, error) {
@@ -44,7 +61,7 @@ func ContainerInspect(a *AlertdContainer, c *client.Client) (*types.ContainerJSO
 // InitCheckers returns a slice of containers with all the info needed to run a
 // check on the container. Active is for whether or not the alert is active, not the check
 func InitCheckers(c *Conf) []AlertdContainer {
-	// Taking the Conf and changing it into a more appropriate format for the monitor
+	// Taking the values from the conf and adding them into the AlertdContainers
 	var containers []AlertdContainer
 	for _, v := range c.Containers {
 		containers = append(containers, AlertdContainer{
@@ -65,7 +82,7 @@ func InitCheckers(c *Conf) []AlertdContainer {
 				AlertActive: false,
 			},
 			ExistenceCheck: &StaticCheck{
-				Expected:    true,
+				Expected:    boolP(true),
 				AlertActive: false,
 			},
 			RunningCheck: &StaticCheck{
@@ -113,20 +130,24 @@ func Monitor(c *Conf, a *Alert) {
 
 	cnt := InitCheckers(c)
 
+	if c.Duration == nil {
+		c.Duration = int64P(100)
+	}
+
 	switch c.Iterations {
-	case 0:
+	case nil:
 		for {
 			a.Clear()
 			CheckContainers(cnt, cli, a)
 			a.Evaluate()
-			time.Sleep(time.Duration(c.Duration) * time.Millisecond)
+			time.Sleep(time.Duration(*c.Duration) * time.Millisecond)
 		}
 	default:
-		for i := int64(0); i < c.Iterations; i++ {
+		for i := int64(0); i < *c.Iterations; i++ {
 			a.Clear()
 			CheckContainers(cnt, cli, a)
 			a.Evaluate()
-			time.Sleep(time.Duration(c.Duration) * time.Millisecond)
+			time.Sleep(time.Duration(*c.Duration) * time.Millisecond)
 		}
 	}
 }

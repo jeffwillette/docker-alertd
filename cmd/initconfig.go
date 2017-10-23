@@ -1,17 +1,3 @@
-// Copyright © 2017 NAME HERE <EMAIL ADDRESS>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
@@ -42,8 +28,6 @@ var (
 		},
 	}
 )
-
-// TODO: add an option to print config to stdout.
 
 // AlerterStub stores the bytes needed for the alerter stub in the config file as well as
 // a boolean value which is evaluated only if the user has supplied specific alerter stubs
@@ -142,8 +126,10 @@ func shouldPrintall() bool {
 }
 
 var config = []byte(`---
-duration: 100				# duration in ms between docker API calls
-iterations: 0				# number of iterations to run (0 = run forever)
+# The duration and interations settings, if omitted, have a default value of 100ms between
+# docker API calls and an indefinite number of iterations which will run the monitor forever
+#duration: 100				# duration in ms between docker API calls
+#iterations: 0				# number of iterations to run
 
 # 'containers' is an array of dictionaries that each contain the name of a container to
 # monitor, and the metrics which it should be monitored by. If there are no metrics
