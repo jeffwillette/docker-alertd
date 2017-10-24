@@ -58,9 +58,9 @@ func init() {
 
 	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "",
 		fmt.Sprintf("config file (default is ./%[1]s.yaml or $HOME/%[1]s.yaml)", confName))
-	RootCmd.PersistentFlags().Int64P("iterations", "i", 0,
+	RootCmd.PersistentFlags().Uint64P("iterations", "i", 0,
 		"the number of iterations that the monitor will run. (default 0 is infinite)")
-	RootCmd.PersistentFlags().Int64P("duration", "t", 1000,
+	RootCmd.PersistentFlags().Uint64P("duration", "t", 1000,
 		"the duration between monitor calls to the docker API in milliseconds (default 1000)")
 
 	// Cobra also supports local flags, which will only run
@@ -116,8 +116,8 @@ type Conf struct {
 	Email      Email
 	Slack      Slack
 	Pushover   Pushover
-	Iterations *int64
-	Duration   *int64
+	Iterations uint64
+	Duration   uint64
 	Alerters   []Alerter
 }
 

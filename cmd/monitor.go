@@ -130,24 +130,20 @@ func Monitor(c *Conf, a *Alert) {
 
 	cnt := InitCheckers(c)
 
-	if c.Duration == nil {
-		c.Duration = int64P(100)
-	}
-
 	switch c.Iterations {
-	case nil:
+	case 0:
 		for {
 			a.Clear()
 			CheckContainers(cnt, cli, a)
 			a.Evaluate()
-			time.Sleep(time.Duration(*c.Duration) * time.Millisecond)
+			time.Sleep(time.Duration(c.Duration) * time.Millisecond)
 		}
 	default:
-		for i := int64(0); i < *c.Iterations; i++ {
+		for i := uint64(0); i < c.Iterations; i++ {
 			a.Clear()
 			CheckContainers(cnt, cli, a)
 			a.Evaluate()
-			time.Sleep(time.Duration(*c.Duration) * time.Millisecond)
+			time.Sleep(time.Duration(c.Duration) * time.Millisecond)
 		}
 	}
 }
