@@ -146,8 +146,8 @@ func TestCheckExists(t *testing.T) {
 		{
 			Name: "test fails existence check",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						Name: "test",
@@ -161,8 +161,8 @@ func TestCheckExists(t *testing.T) {
 		{
 			Name: "test passes existence check",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						Name: "test",
@@ -182,8 +182,8 @@ func TestCheckExists(t *testing.T) {
 		{
 			Name: "test recovers existence check",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						Name: "test",
@@ -205,8 +205,8 @@ func TestCheckExists(t *testing.T) {
 		{
 			Name: "test passes check where expected running is absent and container is running",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						Name: "test",
@@ -235,7 +235,7 @@ func TestCheckExists(t *testing.T) {
 			cnt[0].ExistenceCheck.AlertActive = true
 		}
 
-		for i := int64(0); i < *test.Config.Iterations; i++ {
+		for i := uint64(0); i < test.Config.Iterations; i++ {
 			time.Sleep(1 * time.Second) // small delay to allow containers to exit
 			CheckContainers(cnt, cli, a)
 
@@ -257,7 +257,7 @@ func TestCheckExists(t *testing.T) {
 				}
 			}
 
-			time.Sleep(time.Duration(*test.Config.Duration) * time.Millisecond)
+			time.Sleep(time.Duration(test.Config.Duration) * time.Millisecond)
 		}
 
 		Teardown(t, test.Containers)
@@ -277,8 +277,8 @@ func TestCheckRunning(t *testing.T) {
 		{
 			Name: "test passes running check",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						Name:            "test",
@@ -299,8 +299,8 @@ func TestCheckRunning(t *testing.T) {
 		{
 			Name: "test fails running check",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						Name:            "test",
@@ -322,8 +322,8 @@ func TestCheckRunning(t *testing.T) {
 		{
 			Name: "test recovers running check",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						Name:            "test",
@@ -355,7 +355,7 @@ func TestCheckRunning(t *testing.T) {
 			cnt[0].RunningCheck.AlertActive = true
 		}
 
-		for i := int64(0); i < *test.Config.Iterations; i++ {
+		for i := uint64(0); i < test.Config.Iterations; i++ {
 			time.Sleep(1 * time.Second) // small delay to allow containers to exit
 			CheckContainers(cnt, cli, a)
 
@@ -378,7 +378,7 @@ func TestCheckRunning(t *testing.T) {
 				}
 			}
 
-			time.Sleep(time.Duration(*test.Config.Duration) * time.Millisecond)
+			time.Sleep(time.Duration(test.Config.Duration) * time.Millisecond)
 		}
 
 		Teardown(t, test.Containers)
@@ -398,8 +398,8 @@ func TestCheckCPUUsage(t *testing.T) {
 		{
 			Name: "test fails cpu check",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						MaxCPU:          uint64P(20),
@@ -422,8 +422,8 @@ func TestCheckCPUUsage(t *testing.T) {
 		{
 			Name: "test passes cpu check",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						MaxCPU:          uint64P(20),
@@ -445,8 +445,8 @@ func TestCheckCPUUsage(t *testing.T) {
 		{
 			Name: "test recover cpu check",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						MaxCPU:          uint64P(20),
@@ -479,7 +479,7 @@ func TestCheckCPUUsage(t *testing.T) {
 			cnt[0].CPUCheck.AlertActive = true
 		}
 
-		for i := int64(0); i < *test.Config.Iterations; i++ {
+		for i := uint64(0); i < test.Config.Iterations; i++ {
 			CheckContainers(cnt, cli, a)
 
 			if a.Len() != test.ExpectedAlertLen {
@@ -500,7 +500,7 @@ func TestCheckCPUUsage(t *testing.T) {
 				}
 			}
 
-			time.Sleep(time.Duration(*test.Config.Duration) * time.Millisecond)
+			time.Sleep(time.Duration(test.Config.Duration) * time.Millisecond)
 		}
 
 		Teardown(t, test.Containers)
@@ -521,8 +521,8 @@ func TestCheckMemory(t *testing.T) {
 		{
 			Name: "test fails mem check",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						MaxMem:          uint64P(10),
@@ -545,8 +545,8 @@ func TestCheckMemory(t *testing.T) {
 		{
 			Name: "test passes memcheck",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						MaxMem:          uint64P(10),
@@ -568,8 +568,8 @@ func TestCheckMemory(t *testing.T) {
 		{
 			Name: "test recovered memcheck",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						MaxMem:          uint64P(10),
@@ -602,7 +602,7 @@ func TestCheckMemory(t *testing.T) {
 			cnt[0].MemCheck.AlertActive = true
 		}
 
-		for i := int64(0); i < *test.Config.Iterations; i++ {
+		for i := uint64(0); i < test.Config.Iterations; i++ {
 			CheckContainers(cnt, cli, a)
 
 			if a.Len() != test.ExpectedAlertLen {
@@ -623,7 +623,7 @@ func TestCheckMemory(t *testing.T) {
 				}
 			}
 
-			time.Sleep(time.Duration(*test.Config.Duration) * time.Millisecond)
+			time.Sleep(time.Duration(test.Config.Duration) * time.Millisecond)
 		}
 
 		Teardown(t, test.Containers)
@@ -644,8 +644,8 @@ func TestCheckPID(t *testing.T) {
 		{
 			Name: "test passes PID check",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						MinProcs:        uint64P(2),
@@ -668,8 +668,8 @@ func TestCheckPID(t *testing.T) {
 		{
 			Name: "test fails PID check",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						MinProcs:        uint64P(3),
@@ -693,8 +693,8 @@ func TestCheckPID(t *testing.T) {
 		{
 			Name: "test recovers PID check",
 			Config: &Conf{
-				Duration:   int64P(100),
-				Iterations: int64P(2),
+				Duration:   100,
+				Iterations: 2,
 				Containers: []Container{
 					{
 						MinProcs:        uint64P(2),
@@ -733,7 +733,7 @@ func TestCheckPID(t *testing.T) {
 			cnt[0].PIDCheck.AlertActive = true
 		}
 
-		for i := int64(0); i < *test.Config.Iterations; i++ {
+		for i := uint64(0); i < test.Config.Iterations; i++ {
 			CheckContainers(cnt, cli, a)
 
 			if a.Len() != test.ExpectedAlertLen {
@@ -754,7 +754,7 @@ func TestCheckPID(t *testing.T) {
 				}
 			}
 
-			time.Sleep(time.Duration(*test.Config.Duration) * time.Millisecond)
+			time.Sleep(time.Duration(test.Config.Duration) * time.Millisecond)
 		}
 
 		Teardown(t, test.Containers)
