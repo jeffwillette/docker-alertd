@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -123,18 +124,20 @@ func (c *AlertdContainer) CheckExists(e error) {
 	switch {
 	case c.IsUnknown(e) && !c.ExistenceCheck.AlertActive:
 		// if the alert is not active I need to alert and make it active
-		c.Alert.Add(e, ErrExistCheckFail, "%s", c.Name)
+		c.Alert.Add(e, ErrExistCheckFail, fmt.Sprintf("%s", c.Name))
 		c.ExistenceCheck.ToggleAlertActive()
 
 	case c.IsUnknown(e) && c.ExistenceCheck.AlertActive:
 		// do nothing
 	case c.HasErrored(e):
 		// if there is some other error besides an existence check error
-		c.Alert.Add(e, ErrUnknown, "%s", c.Name)
+		c.Alert.Add(e, ErrUnknown, fmt.Sprintf("%s", c.Name))
 
 	case c.HasBecomeKnown(e):
-		c.Alert.Add(ErrExistCheckRecovered, nil, "%s", c.Name)
+		c.Alert.Add(ErrExistCheckRecovered, nil, fmt.Sprintf("%s", c.Name))
 		c.ExistenceCheck.ToggleAlertActive()
+	default:
+		return // nothing is wrong, just keep going
 	}
 }
 
@@ -148,14 +151,14 @@ func (c *AlertdContainer) ShouldAlertRunning(j *types.ContainerJSON) bool {
 func (c *AlertdContainer) CheckRunning(j *types.ContainerJSON) {
 	switch {
 	case c.ShouldAlertRunning(j) && !c.RunningCheck.AlertActive:
-		c.Alert.Add(ErrRunningCheckFail, nil, "%s: expected running state: %t, current running state: %t",
-			c.Name, c.RunningCheck.Expected, j.State.Running)
+		c.Alert.Add(ErrRunningCheckFail, nil, fmt.Sprintf("%s: expected running state: "+
+			"%t, current running state: %t", c.Name, *c.RunningCheck.Expected, j.State.Running))
 
 		c.RunningCheck.ToggleAlertActive()
 
 	case !c.ShouldAlertRunning(j) && c.RunningCheck.AlertActive:
-		c.Alert.Add(ErrRunningCheckRecovered, nil, "%s: expected running state: %t, current running state: %t",
-			c.Name, c.RunningCheck.Expected, j.State.Running)
+		c.Alert.Add(ErrRunningCheckRecovered, nil, fmt.Sprintf("%s: expected running state: "+
+			"%t, current running state: %t", c.Name, *c.RunningCheck.Expected, j.State.Running))
 
 		c.RunningCheck.ToggleAlertActive()
 	}
@@ -185,14 +188,14 @@ func (c *AlertdContainer) CheckCPUUsage(s *types.Stats) {
 
 	switch {
 	case a && !c.CPUCheck.AlertActive:
-		c.Alert.Add(ErrCPUCheckFail, nil, "%s: CPU limit: %d, current usage: %d",
-			c.Name, c.CPUCheck.Limit, u)
+		c.Alert.Add(ErrCPUCheckFail, nil, fmt.Sprintf("%s: CPU limit: %d, current usage: %d",
+			c.Name, c.CPUCheck.Limit, u))
 
 		c.CPUCheck.ToggleAlertActive()
 
 	case !a && c.CPUCheck.AlertActive:
-		c.Alert.Add(ErrCPUCheckRecovered, nil, "%s: CPU limit: %d, current usage %d",
-			c.Name, c.CPUCheck.Limit, u)
+		c.Alert.Add(ErrCPUCheckRecovered, nil, fmt.Sprintf("%s: CPU limit: %d, current usage %d",
+			c.Name, c.CPUCheck.Limit, u))
 
 		c.CPUCheck.ToggleAlertActive()
 	}
@@ -211,14 +214,14 @@ func (c *AlertdContainer) CheckMinPids(s *types.Stats) {
 	case c.PIDCheck.Limit == nil:
 		// do nothing because the check is disabled
 	case a && !c.PIDCheck.AlertActive:
-		c.Alert.Add(ErrMinPIDCheckFail, nil, "%s: minimum PIDs: %d, current PIDs: %d",
-			c.Name, c.PIDCheck.Limit, s.PidsStats.Current)
+		c.Alert.Add(ErrMinPIDCheckFail, nil, fmt.Sprintf("%s: minimum PIDs: %d, current PIDs: %d",
+			c.Name, c.PIDCheck.Limit, s.PidsStats.Current))
 
 		c.PIDCheck.ToggleAlertActive()
 
 	case !a && c.PIDCheck.AlertActive:
-		c.Alert.Add(ErrMinPIDCheckRecovered, nil, "%s: minimum PIDs: %d, current PIDs: %d",
-			c.Name, c.PIDCheck.Limit, s.PidsStats.Current)
+		c.Alert.Add(ErrMinPIDCheckRecovered, nil, fmt.Sprintf("%s: minimum PIDs: %d, current PIDs: %d",
+			c.Name, c.PIDCheck.Limit, s.PidsStats.Current))
 
 		c.PIDCheck.ToggleAlertActive()
 	}
@@ -247,14 +250,14 @@ func (c *AlertdContainer) CheckMemory(s *types.Stats) {
 	case c.MemCheck.Limit == nil:
 		// do nothing because the check is disabled
 	case a && !c.MemCheck.AlertActive:
-		c.Alert.Add(ErrMemCheckFail, nil, "%s: Memory limit: %d, current usage: %d",
-			c.Name, c.MemCheck.Limit, u)
+		c.Alert.Add(ErrMemCheckFail, nil, fmt.Sprintf("%s: Memory limit: %d, current usage: %d",
+			c.Name, c.MemCheck.Limit, u))
 
 		c.MemCheck.ToggleAlertActive()
 
 	case !a && c.MemCheck.AlertActive:
-		c.Alert.Add(ErrMemCheckRecovered, nil, "%s: Memory limit: %d, current usage: %d",
-			c.Name, c.MemCheck.Limit, u)
+		c.Alert.Add(ErrMemCheckRecovered, nil, fmt.Sprintf("%s: Memory limit: %d, current usage: %d",
+			c.Name, c.MemCheck.Limit, u))
 
 		c.MemCheck.ToggleAlertActive()
 	}

@@ -37,14 +37,14 @@ func (a *Alert) Len() int {
 }
 
 // Add should take in an error and wrap it
-func (a *Alert) Add(e1, e2 error, fs string, args ...interface{}) {
+func (a *Alert) Add(e1, e2 error, s string) {
 
 	e := e1
 	if e2 != nil {
 		e = errors.Wrap(e1, e2.Error())
 	}
 
-	err := errors.Wrapf(e, fs, args...)
+	err := errors.Wrap(e, s)
 	a.Messages = append(a.Messages, err)
 }
 
