@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -16,7 +17,8 @@ type Evaluator interface {
 // Alert is the struct that stores information about alerts and its methods satisfy the
 // Alerter interface
 type Alert struct {
-	Messages []error
+	Messages         []error
+	SubjectAddendums []string
 }
 
 // ShouldSend returns true if there is an alert message to be sent
@@ -37,7 +39,9 @@ func (a *Alert) Len() int {
 }
 
 // Add should take in an error and wrap it
-func (a *Alert) Add(e1, e2 error, s string) {
+func (a *Alert) Add(e1, e2 error, s, subAddendum string) {
+
+	a.SubjectAddendums = append(a.SubjectAddendums, subAddendum)
 
 	e := e1
 	if e2 != nil {
@@ -54,6 +58,10 @@ func (a *Alert) Concat(b ...*Alert) {
 		for _, msg := range v.Messages {
 			a.Messages = append(a.Messages, msg)
 		}
+
+		for _, addendum := range v.SubjectAddendums {
+			a.SubjectAddendums = append(a.SubjectAddendums, addendum)
+		}
 	}
 }
 
@@ -68,6 +76,7 @@ func (a *Alert) Log() {
 // Clear will reset the alert to an empty string
 func (a *Alert) Clear() {
 	a.Messages = []error{}
+	a.SubjectAddendums = []string{}
 }
 
 // Dump takes the slice of alerts and dumps them to a single string
@@ -75,6 +84,26 @@ func (a *Alert) Dump() string {
 	s := ""
 	for _, v := range a.Messages {
 		s += fmt.Sprintf("%s\n\n", v.Error())
+	}
+	return s
+}
+
+// DumpEmail behaves like dump, but formats them for email by splitting on ":" and adding
+// \n\t (newline and tab) for the first two segments and joining the last segment. This
+// should result in an email that is formatted as follows...
+// [containerName]:
+// 		[alertName]:
+// 		Error: [errString]
+func (a *Alert) DumpEmail() (s string) {
+	for _, e := range a.Messages {
+		errString := e.Error()
+		splitErr := strings.SplitN(errString, ":", 3)
+
+		for _, v := range splitErr {
+			s += fmt.Sprintf("%s\n\t", v)
+		}
+		s += fmt.Sprintf("\n\n")
+
 	}
 	return s
 }
