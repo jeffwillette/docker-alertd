@@ -33,11 +33,20 @@ type Email struct {
 // Alert sends an email alert
 func (e Email) Alert(a *Alert) error {
 	// alerts in string form
-	alerts := a.Dump()
+	alerts := a.DumpEmail()
+
+	subject := e.Subject + ": "
+	for i := range a.SubjectAddendums {
+		// add addendums to the subject
+		subject += fmt.Sprintf("%s ", a.SubjectAddendums[i])
+		if i == 2 { // subjects cannot be too long, stop if it is at position 3
+			subject += fmt.Sprintf("...")
+		}
+	}
 
 	// The email message formatted properly
 	formattedMsg := []byte(fmt.Sprintf("To: %s\r\nSubject: %s\r\n\r\n%s\r\n",
-		e.To, e.Subject, alerts))
+		e.To, subject, alerts))
 
 	// Set up authentication/address information
 	auth := smtp.PlainAuth("", e.From, e.Password, e.SMTP)
@@ -140,9 +149,9 @@ func (s Slack) Alert(a *Alert) error {
 
 // Pushover contains all info needed to push a notification to Pushover api
 type Pushover struct {
-	ApiToken string
-	UserKey string
-	ApiURL string
+	APIToken string
+	UserKey  string
+	APIURL   string
 }
 
 // Valid returns an error if pushover settings are invalid
@@ -153,16 +162,16 @@ func (p Pushover) Valid() error {
 		return nil // assume that pushover was omitted
 	}
 
-	if p.ApiToken == "" {
-		errString = append(errString, ErrPushoverApiToken.Error())
+	if p.APIToken == "" {
+		errString = append(errString, ErrPushoverAPIToken.Error())
 	}
 
 	if p.UserKey == "" {
 		errString = append(errString, ErrPushoverUserKey.Error())
 	}
 
-	if p.ApiURL == "" {
-		errString = append(errString, ErrPushoverApiURL.Error())
+	if p.APIURL == "" {
+		errString = append(errString, ErrPushoverAPIURL.Error())
 	}
 
 	if len(errString) == 0 {
@@ -176,13 +185,14 @@ func (p Pushover) Valid() error {
 }
 
 // Alert sends the alert to Pushover API
-func (s Pushover) Alert(a *Alert) error {
+func (p Pushover) Alert(a *Alert) error {
 	alerts := a.Dump()
 
-	parsed_body := fmt.Sprintf("token=%s&user=%s&message=%s", s.ApiToken, s.UserKey, url.QueryEscape(alerts))
-	body := bytes.NewBufferString(parsed_body)
+	parsedBody := fmt.Sprintf("token=%s&user=%s&message=%s", p.APIToken, p.UserKey,
+		url.QueryEscape(alerts))
+	body := bytes.NewBufferString(parsedBody)
 
-	resp, err := http.Post(s.ApiURL, "application/x-www-form-urlencoded", body)
+	resp, err := http.Post(p.APIURL, "application/x-www-form-urlencoded", body)
 	if err != nil {
 		return err
 	}

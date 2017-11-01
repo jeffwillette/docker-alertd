@@ -147,7 +147,7 @@ background process as per your operating system.
 
 ### As A Systemd Service (for Linux systems with systemd)
 
-If you have a systemd based system then you can refer to [docker-alertd.service.example](https://github.com/deltaskelta/docker-alertd/blob/master/docker-alertd.service.example) 
+If you have a systemd based system then you can refer to [docker-alertd.service.example](https://github.com/deltaskelta/docker-alertd/blob/master/docker-alertd.service.example)
 the example systemd service file and this [tutorial](https://www.digitalocean.com/community/tutorials/how-to-use-systemctl-to-manage-systemd-services-and-units)
 
 ### With Launchd (MacOS)
