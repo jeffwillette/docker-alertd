@@ -158,6 +158,41 @@ Refer to the [launchd plist example file](https://github.com/deltaskelta/docker-
 
 Refer to this [Sys V Init tutorial](https://www.cyberciti.biz/tips/linux-write-sys-v-init-script-to-start-stop-service.html)
 
+### Within docker
+
+If you want to run `docker-alertd` from within DOcker, you can do that. This requires
+mounting the docker socket into the container which comes with security risks because the
+container has access to the docker socket and therefore if it was compromised, it would
+have root access on the system [google - mounting docker socket security](https://www.google.co.kr/search?q=mounting+docker+socket+secuity).
+
+That being said if you decide it is something you want to do in development or in a
+controlled production environment, you can use the image on the docker registry.
+
+pull the image frm the registry
+
+```bash
+docker pull deltaskelta/docker-alertd
+
+#or if you want to build your own tagged image, clone the repo and run
+#docker build -t [your-tag] .
+```
+
+run the command to get a config file printed to stdout. You must save it, modify it to fit
+your needs, and then mount it into the container that will run `docker-alertd`.
+
+NOTE: `go-wrapper run` is equivalient to `docker-alertd` if the binary was installed
+normally, so all of `docker-alertd`s normal commands will follow `go-wrapper run`
+
+```bash
+docker run --rm  deltaskelta/docker-alertd go-wrapper run initconfig --stdout
+```
+
+and then run the app with the mounted config file and the mounted docker socket.
+
+```bash
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v ~/.docker-aled.yaml:/root/.docker-alertd.yaml deltaskelta/docker-alertd
+```
+
 ### Testing Alert Authentication
 
 Docker-Alertd comes with a `testalert` command which will search for a nonexistant
