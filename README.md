@@ -147,7 +147,7 @@ background process as per your operating system.
 
 ### As A Systemd Service (for Linux systems with systemd)
 
-If you have a systemd based system then you can refer to [docker-alertd.service.example](https://github.com/deltaskelta/docker-alertd/blob/master/docker-alertd.service.example) 
+If you have a systemd based system then you can refer to [docker-alertd.service.example](https://github.com/deltaskelta/docker-alertd/blob/master/docker-alertd.service.example)
 the example systemd service file and this [tutorial](https://www.digitalocean.com/community/tutorials/how-to-use-systemctl-to-manage-systemd-services-and-units)
 
 ### With Launchd (MacOS)
@@ -157,6 +157,41 @@ Refer to the [launchd plist example file](https://github.com/deltaskelta/docker-
 ### With Sys V Init (various Linux systems without systemd)
 
 Refer to this [Sys V Init tutorial](https://www.cyberciti.biz/tips/linux-write-sys-v-init-script-to-start-stop-service.html)
+
+### Within docker
+
+If you want to run `docker-alertd` from within DOcker, you can do that. This requires
+mounting the docker socket into the container which comes with security risks because the
+container has access to the docker socket and therefore if it was compromised, it would
+have root access on the system [google - mounting docker socket security](https://www.google.co.kr/search?q=mounting+docker+socket+secuity).
+
+That being said if you decide it is something you want to do in development or in a
+controlled production environment, you can use the image on the docker registry.
+
+pull the image frm the registry
+
+```bash
+docker pull deltaskelta/docker-alertd
+
+#or if you want to build your own tagged image, clone the repo and run
+#docker build -t [your-tag] .
+```
+
+run the command to get a config file printed to stdout. You must save it, modify it to fit
+your needs, and then mount it into the container that will run `docker-alertd`.
+
+NOTE: `go-wrapper run` is equivalient to `docker-alertd` if the binary was installed
+normally, so all of `docker-alertd`s normal commands will follow `go-wrapper run`
+
+```bash
+docker run --rm  deltaskelta/docker-alertd go-wrapper run initconfig --stdout
+```
+
+and then run the app with the mounted config file and the mounted docker socket.
+
+```bash
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v ~/.docker-aled.yaml:/root/.docker-alertd.yaml deltaskelta/docker-alertd
+```
 
 ### Testing Alert Authentication
 

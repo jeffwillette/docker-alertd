@@ -8,7 +8,7 @@ import (
 
 // these errors are for the purpose of being able to compare them later
 var (
-	ErrEmptyConfig           = errors.New("The configuration is completely empty (check config file)")
+	ErrEmptyConfig           = errors.New("the configuration is completely empty (check config file)")
 	ErrEmailNoSMTP           = errors.New("no email SMTP server")
 	ErrEmailNoTo             = errors.New("no email to addresses")
 	ErrEmailNoFrom           = errors.New("no email from addresses")
@@ -16,7 +16,7 @@ var (
 	ErrEmailNoPort           = errors.New("no email port")
 	ErrEmailNoSubject        = errors.New("no email subject")
 	ErrSlackNoWebHookURL     = errors.New("no slack webhook url")
-	ErrNoContainers          = errors.New("There were no containers found in the configuration file")
+	ErrNoContainers          = errors.New("there were no containers found in the configuration file")
 	ErrExistCheckFail        = errors.New("Existence check failure")
 	ErrExistCheckRecovered   = errors.New("Existence check recovered")
 	ErrRunningCheckFail      = errors.New("Running check failure")
@@ -30,9 +30,9 @@ var (
 	ErrMaxPIDCheckFail       = errors.New("Max PID check Failure")
 	ErrMaxPIDCheckRecovered  = errors.New("Max PID check recovered")
 	ErrUnknown               = errors.New("Received an unknown error")
-	ErrPushoverApiToken     = errors.New("no pushover api token")
-	ErrPushoverUserKey     = errors.New("no pushover user key")
-	ErrPushoverApiURL     = errors.New("no pushover api url")
+	ErrPushoverAPIToken      = errors.New("no pushover api token")
+	ErrPushoverUserKey       = errors.New("no pushover user key")
+	ErrPushoverAPIURL        = errors.New("no pushover api url")
 )
 
 // ErrContainsErr returns true if the error string contains the message
