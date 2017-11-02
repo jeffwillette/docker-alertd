@@ -58,7 +58,7 @@ type AlertdContainer struct {
 func (c *AlertdContainer) CheckMetrics(s *types.Stats, e error) {
 	switch {
 	case e != nil:
-		c.Alert.Add(e, nil, "Received an unknown error")
+		c.Alert.Add(e, nil, "Received an unknown error", "")
 	default:
 		if c.CPUCheck.Limit != nil {
 			c.CheckCPUUsage(s)
@@ -124,17 +124,17 @@ func (c *AlertdContainer) CheckExists(e error) {
 	switch {
 	case c.IsUnknown(e) && !c.ExistenceCheck.AlertActive:
 		// if the alert is not active I need to alert and make it active
-		c.Alert.Add(e, ErrExistCheckFail, fmt.Sprintf("%s", c.Name))
+		c.Alert.Add(e, ErrExistCheckFail, fmt.Sprintf("%s", c.Name), ErrExistCheckFail.Error())
 		c.ExistenceCheck.ToggleAlertActive()
 
 	case c.IsUnknown(e) && c.ExistenceCheck.AlertActive:
 		// do nothing
 	case c.HasErrored(e):
 		// if there is some other error besides an existence check error
-		c.Alert.Add(e, ErrUnknown, fmt.Sprintf("%s", c.Name))
+		c.Alert.Add(e, ErrUnknown, fmt.Sprintf("%s", c.Name), "")
 
 	case c.HasBecomeKnown(e):
-		c.Alert.Add(ErrExistCheckRecovered, nil, fmt.Sprintf("%s", c.Name))
+		c.Alert.Add(ErrExistCheckRecovered, nil, fmt.Sprintf("%s", c.Name), ErrExistCheckRecovered.Error())
 		c.ExistenceCheck.ToggleAlertActive()
 	default:
 		return // nothing is wrong, just keep going
@@ -152,13 +152,15 @@ func (c *AlertdContainer) CheckRunning(j *types.ContainerJSON) {
 	switch {
 	case c.ShouldAlertRunning(j) && !c.RunningCheck.AlertActive:
 		c.Alert.Add(ErrRunningCheckFail, nil, fmt.Sprintf("%s: expected running state: "+
-			"%t, current running state: %t", c.Name, *c.RunningCheck.Expected, j.State.Running))
+			"%t, current running state: %t", c.Name, *c.RunningCheck.Expected, j.State.Running),
+			ErrRunningCheckFail.Error())
 
 		c.RunningCheck.ToggleAlertActive()
 
 	case !c.ShouldAlertRunning(j) && c.RunningCheck.AlertActive:
 		c.Alert.Add(ErrRunningCheckRecovered, nil, fmt.Sprintf("%s: expected running state: "+
-			"%t, current running state: %t", c.Name, *c.RunningCheck.Expected, j.State.Running))
+			"%t, current running state: %t", c.Name, *c.RunningCheck.Expected, j.State.Running),
+			ErrRunningCheckRecovered.Error())
 
 		c.RunningCheck.ToggleAlertActive()
 	}
@@ -189,13 +191,13 @@ func (c *AlertdContainer) CheckCPUUsage(s *types.Stats) {
 	switch {
 	case a && !c.CPUCheck.AlertActive:
 		c.Alert.Add(ErrCPUCheckFail, nil, fmt.Sprintf("%s: CPU limit: %d, current usage: %d",
-			c.Name, c.CPUCheck.Limit, u))
+			c.Name, c.CPUCheck.Limit, u), ErrCPUCheckFail.Error())
 
 		c.CPUCheck.ToggleAlertActive()
 
 	case !a && c.CPUCheck.AlertActive:
 		c.Alert.Add(ErrCPUCheckRecovered, nil, fmt.Sprintf("%s: CPU limit: %d, current usage %d",
-			c.Name, c.CPUCheck.Limit, u))
+			c.Name, c.CPUCheck.Limit, u), ErrCPUCheckRecovered.Error())
 
 		c.CPUCheck.ToggleAlertActive()
 	}
@@ -215,13 +217,13 @@ func (c *AlertdContainer) CheckMinPids(s *types.Stats) {
 		// do nothing because the check is disabled
 	case a && !c.PIDCheck.AlertActive:
 		c.Alert.Add(ErrMinPIDCheckFail, nil, fmt.Sprintf("%s: minimum PIDs: %d, current PIDs: %d",
-			c.Name, c.PIDCheck.Limit, s.PidsStats.Current))
+			c.Name, c.PIDCheck.Limit, s.PidsStats.Current), ErrMinPIDCheckFail.Error())
 
 		c.PIDCheck.ToggleAlertActive()
 
 	case !a && c.PIDCheck.AlertActive:
 		c.Alert.Add(ErrMinPIDCheckRecovered, nil, fmt.Sprintf("%s: minimum PIDs: %d, current PIDs: %d",
-			c.Name, c.PIDCheck.Limit, s.PidsStats.Current))
+			c.Name, c.PIDCheck.Limit, s.PidsStats.Current), ErrMinPIDCheckRecovered.Error())
 
 		c.PIDCheck.ToggleAlertActive()
 	}
@@ -251,13 +253,13 @@ func (c *AlertdContainer) CheckMemory(s *types.Stats) {
 		// do nothing because the check is disabled
 	case a && !c.MemCheck.AlertActive:
 		c.Alert.Add(ErrMemCheckFail, nil, fmt.Sprintf("%s: Memory limit: %d, current usage: %d",
-			c.Name, c.MemCheck.Limit, u))
+			c.Name, c.MemCheck.Limit, u), ErrMemCheckFail.Error())
 
 		c.MemCheck.ToggleAlertActive()
 
 	case !a && c.MemCheck.AlertActive:
 		c.Alert.Add(ErrMemCheckRecovered, nil, fmt.Sprintf("%s: Memory limit: %d, current usage: %d",
-			c.Name, c.MemCheck.Limit, u))
+			c.Name, c.MemCheck.Limit, u), ErrMemCheckRecovered.Error())
 
 		c.MemCheck.ToggleAlertActive()
 	}
