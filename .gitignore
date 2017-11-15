@@ -1,2 +1,3 @@
 .docker-alertd.yaml
 docker-alertd-dist/
+vendor/

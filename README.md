@@ -9,7 +9,7 @@
 docker-alertd monitors docker containers on a host machine and sends alerts via email when
 usage limits have been breached.
 
-Currently, alerts can be sent based on:
+#### Currently, alerts can be sent based on:
 
 1. Container existence (regardless of running state)
 2. Running state (running or existed)
@@ -27,7 +27,7 @@ Assuming that you already have `go` installed on your machine, you can just `go 
 go get github.com/deltaskelta/docker-alertd
 ```
 
-##### If you would like to download a pre-compiled binary, head to the release downloads
+#### If you would like to download a pre-compiled binary, head to the release downloads
 
 [latest release - precompiled binary download](https://github.com/deltaskelta/docker-alertd/releases/latest)
 
@@ -37,13 +37,13 @@ Docker-Alertd needs a configuration file in order to run, it will search the dir
 which contains the binary, and the home directory for a config file automatically. A
 special config file location can be specified with the `--config` flag.
 
-A base config file can be generated with the command:
+#### A base config file can be generated with the command:
 
 ```
 docker-alertd initconfig -d /path/to/config/location/
 ```
 
-##### Example `.docker-alertd.yaml` file
+#### Example `.docker-alertd.yaml` file
 ```yaml
 ---
 # The duration and interations settings, if omitted, have a default value of 100ms between
@@ -84,7 +84,8 @@ emailSettings:
 
 ### Configuration Variables
 
-##### Containers
+#### Containers
+
 `duration`: the duration to wait between docker engine API calls.
 
 `iterations`:  the number of iterations that docker-alertd should run (0 = run forever)
@@ -102,6 +103,7 @@ number of running processes dips below this level (when a process fails), an ale
 be triggered.
 
 #### Email Settings
+
 `active`: whether email settings are active or not
 
 `smtp`: the smtp server to connect to
@@ -123,8 +125,15 @@ channel. See [slack apps](https://api.slack.com/apps)
 
 # Step 3: Run the program
 
+Assuming `docker-alertd` is in your system path, and the config file is in the home
+directory or the same directory as the binary...
 ```
-/path/to/binary/docker-alertd --config ~/path/to/configuration/file/.docker-alertd.yaml
+$ docker-alertd
+```
+
+if the binary is not on your `$PATH` then you will have to pass absolute paths.
+```
+$ /path/to/binary/docker-alertd --config ~/path/to/configuration/file/.docker-alertd.yaml
 ```
 
 This will start the program and log the output to stdout. It can be stopped with CTRL-C.
@@ -160,7 +169,7 @@ Refer to this [Sys V Init tutorial](https://www.cyberciti.biz/tips/linux-write-s
 
 ### Within docker
 
-If you want to run `docker-alertd` from within DOcker, you can do that. This requires
+If you want to run `docker-alertd` from within Docker, you can do that. This requires
 mounting the docker socket into the container which comes with security risks because the
 container has access to the docker socket and therefore if it was compromised, it would
 have root access on the system [google - mounting docker socket security](https://www.google.co.kr/search?q=mounting+docker+socket+secuity).
